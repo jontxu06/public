@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日本語 Flashcards</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#13151b; --panel:#1c1f29; --panel2:#262a37; --text:#eef0f6; --muted:#9aa1b4;
+    --accent:#e8566e; --accent2:#ff8a5c; --ok:#3fb27f; --fail:#e8566e; --border:#2f3445;
+    --es:#ffd0d8; --shadow:0 6px 24px rgba(0,0,0,.35); --side:290px;
+    --grad:linear-gradient(135deg,var(--accent),var(--accent2));
+  }
+  :root[data-theme="light"]{
+    color-scheme:light;
+    --bg:#f7f3ed; --panel:#ffffff; --panel2:#f0ebe3; --text:#24252e; --muted:#6c7080;
+    --accent:#d6405a; --accent2:#f08a4b; --ok:#2f9d6d; --fail:#d6405a; --border:#ddd4c6;
+    --es:#b02a43; --shadow:0 6px 22px rgba(90,70,40,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);transition:background .25s,color .25s;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+  .hidden{display:none!important}
+  .jpfont{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
+
+  /* ---------- Barra superior ---------- */
+  .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;
+    background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);padding:10px 12px}
+  .iconbtn{background:var(--panel);border:1px solid var(--border);color:var(--text);flex:none;
+    border-radius:12px;width:42px;height:42px;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow)}
+  .topbar h1{font-size:1rem;margin:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .spacer{flex:1}
+  .topsel{width:auto;flex:none;margin:0;padding:8px 8px;font-size:.82rem;border-radius:10px;max-width:150px}
+
+  /* ---------- Menú lateral ---------- */
+  .side{position:fixed;top:0;left:0;bottom:0;width:min(260px,72vw);z-index:30;
+    background:var(--panel);border-right:1px solid var(--border);padding:16px 14px 28px;overflow-y:auto;
+    transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow)}
+  .side.open{transform:none}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:none}
+  .overlay.show{display:block}
+  .side-head{display:flex;justify-content:space-between;align-items:center}
+  .brand{font-size:1.4rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .brand small{display:block;font-size:.72rem;font-weight:500;color:var(--muted);-webkit-text-fill-color:var(--muted)}
+  .close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
+  h2{font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:22px 0 9px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .blocks{display:grid;grid-template-columns:1fr;gap:8px}
+  .mode{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:12px;
+    padding:12px 8px;cursor:pointer;font-size:.93rem;transition:.15s;text-align:center}
+  .blocks .mode{text-align:left;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+  .blocks .mode small{opacity:.75;font-size:.78rem}
+  .mode.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:700}
+
+  /* Árbol de apartados */
+  .tree{margin:-2px 0 6px 20px}
+  .tree-tools{font-size:.76rem;color:var(--muted);margin-left:-5px}
+  .stem{height:12px;border-left:2px solid var(--border);margin-left:0}
+  .branch{position:relative;padding:4px 0 4px 24px}
+  .branch::before{content:"";position:absolute;left:0;top:0;bottom:0;border-left:2px solid var(--border)}
+  .branch:last-child::before{bottom:50%}
+  .conn{position:absolute;left:0;top:50%;width:20px;border-top:2px solid var(--border);transform:translateY(-1px)}
+  .conn::after{content:"";position:absolute;right:-3px;top:-6px;border-left:7px solid var(--border);
+    border-top:5px solid transparent;border-bottom:5px solid transparent}
+  .chip{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:999px;padding:8px 13px;cursor:pointer;font-size:.86rem;transition:.15s;
+    display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left}
+  .chip.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:600}
+  .chip small{opacity:.75;margin-left:6px}
+  .mini{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.76rem;
+    text-decoration:underline;padding:0 5px;text-transform:none;letter-spacing:0}
+  label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+  select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:10px;font-size:.95rem;margin-bottom:10px}
+  .btn{background:var(--grad);color:#fff;border:none;border-radius:14px;padding:15px 20px;
+    font-size:1.02rem;cursor:pointer;width:100%;font-weight:700;box-shadow:var(--shadow);transition:transform .1s}
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-weight:500;box-shadow:none}
+  .btn.ok{background:var(--ok)} .btn.fail{background:var(--fail)}
+  .side .btn.ghost{margin-top:24px;font-size:.85rem;padding:11px}
+
+  /* ---------- Contenido ---------- */
+  .main{padding:18px 16px 40px;max-width:720px;margin:0 auto}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 14px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+  .actions{display:flex;gap:10px;margin-top:18px}
+  .center{text-align:center}
+  .big-num{font-size:3.2rem;font-weight:800;margin:4px 0;background:var(--grad);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* Modo aprender */
+  .theme-title{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);
+    margin:26px 0 10px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+  .theme-title span:last-child{background:var(--panel2);border-radius:999px;padding:2px 10px;font-size:.78rem}
+  .item{background:var(--panel);border:1px solid var(--border);border-left:5px solid var(--accent);
+    border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;flex-direction:column;gap:2px;
+    box-shadow:var(--shadow);cursor:pointer}
+  .item .jp{font-size:1.75rem;line-height:1.3;transition:filter .15s}
+  .item .ro{font-size:1.08rem;opacity:.85;transition:filter .15s}
+  .item .es-txt{font-size:1.08rem;color:var(--es);margin-top:6px;font-weight:600;transition:filter .15s}
+  .item .nt{font-size:.85rem;color:var(--muted);font-style:italic;margin-top:2px;transition:filter .15s}
+  .item .badge{align-self:flex-start;font-size:.72rem;color:var(--fail);margin-bottom:4px;font-weight:700}
+  .h-es .item:not(.visto) .es-txt,
+  .h-es .item:not(.visto) .nt{filter:blur(8px);user-select:none}
+  .h-jp .item:not(.visto) .jp,
+  .h-jp .item:not(.visto) .ro{filter:blur(9px);user-select:none}
+
+  /* Flashcards */
+  .top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.9rem;margin-bottom:8px}
+  .bar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-bottom:16px}
+  .bar>div{height:100%;background:var(--grad);width:0;transition:width .3s;border-radius:99px}
+  .scene{perspective:1200px;cursor:pointer}
+  .card{position:relative;width:100%;height:300px;transition:transform .5s;transform-style:preserve-3d}
+  .card.flipped{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--border);
+    border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:22px;text-align:center;box-shadow:var(--shadow)}
+  .face.back{transform:rotateY(180deg)}
+  .tag{position:absolute;top:14px;left:16px;font-size:.74rem;color:var(--muted);
+    background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
+  .big{font-size:2.5rem;line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
+  .big.es{font-size:1.9rem;font-family:system-ui,sans-serif;font-weight:700}
+  .read{opacity:.85;margin-top:12px;font-size:1.3rem;letter-spacing:.02em}
+  .note{color:var(--muted);margin-top:12px;font-size:.9rem;font-style:italic}
+  .hint{text-align:center;color:var(--muted);font-size:.8rem;margin-top:14px}
+  .stats{display:flex;gap:12px;margin:16px 0}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;
+    text-align:center;box-shadow:var(--shadow)}
+  .stat b{display:block;font-size:2rem}
+  ul.fails{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:.95rem;line-height:1.6}
+
+  /* Gestos en móvil */
+  .scene{touch-action:pan-y;will-change:transform}
+  .scene[data-dir="ok"] .face{box-shadow:0 0 0 3px var(--ok),var(--shadow)}
+  .scene[data-dir="fail"] .face{box-shadow:0 0 0 3px var(--fail),var(--shadow)}
+  .scene.shake{animation:shake .35s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}
+    40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  .hint.warn{color:var(--accent);font-weight:700}
+
+  /* Escritorio: menú siempre visible */
+  @media (min-width:900px){
+    :root{--side:290px}
+    .side{transform:none;box-shadow:none;width:var(--side)}
+    .overlay{display:none!important}
+    .burger,.close{display:none}
+    body{padding-left:var(--side)}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ MENÚ LATERAL ============ -->
+<div class="overlay" id="overlay"></div>
+<aside class="side" id="side">
+  <div class="side-head">
+    <div class="brand">日本語<small>Flashcards de clase</small></div>
+    <button class="close" id="cerrar" aria-label="Cerrar menú">✕</button>
+  </div>
+
+  <h2>Modo</h2>
+  <div class="modes">
+    <button class="mode" id="mLearn">📖 Aprender</button>
+    <button class="mode" id="mFlash">🃏 Flashcards</button>
+  </div>
+
+  <h2>Bloque</h2>
+  <div class="blocks" id="listaBloques"></div>
+
+  <div id="optsFlash">
+    <h2>Flashcards</h2>
+    <label for="dir">Dirección</label>
+    <select id="dir">
+      <option value="es-jp" selected>Español → Japonés</option>
+      <option value="jp-es">Japonés → Español</option>
+      <option value="mixto">Mezclado</option>
+    </select>
+  </div>
+
+  <button class="btn ghost" id="resetProgreso">Borrar mis fallos guardados</button>
+</aside>
+
+<!-- ============ CONTENIDO ============ -->
+<header class="topbar">
+  <button class="iconbtn burger" id="abrir" aria-label="Abrir o cerrar opciones">⋮</button>
+  <h1 id="titulo">Flashcards</h1>
+  <span class="spacer"></span>
+  <select class="topsel" id="ocultar" aria-label="Ocultar texto">
+    <option value="none">👁 Sin ocultar</option>
+    <option value="es">Ocultar español</option>
+    <option value="jp">Ocultar japonés</option>
+  </select>
+  <button class="iconbtn" id="temaBtn" aria-label="Cambiar modo claro/oscuro" title="Modo claro / oscuro">🌙</button>
+</header>
+
+<main class="main">
+
+  <!-- Modo aprender -->
+  <section id="vLearn">
+    <p class="sub" id="learnCount"></p>
+    <div id="learnList"></div>
+    <div class="actions"><button class="btn" id="irRepasar">Repasar esto con flashcards →</button></div>
+  </section>
+
+  <!-- Inicio flashcards -->
+  <section id="vFlash" class="hidden">
+    <div class="panel center">
+      <p class="sub" id="flashBloque" style="margin-bottom:0"></p>
+      <div class="big-num" id="flashCount">0</div>
+      <p class="sub" id="flashDificiles"></p>
+      <button class="btn" id="empezar">Empezar</button>
+    </div>
+    <p class="hint">Elige bloque y apartados en el menú ⋮</p>
+  </section>
+
+  <!-- Estudio -->
+  <section id="vStudy" class="hidden">
+    <div class="top"><span id="posicion"></span><button class="mini" id="salir">← Salir</button></div>
+    <div class="bar"><div id="barra"></div></div>
+    <div class="scene" id="scene">
+      <div class="card" id="card">
+        <div class="face front" id="front"></div>
+        <div class="face back" id="back"></div>
+      </div>
+    </div>
+    <div class="hint" id="hint">Toca la tarjeta para girarla · Teclado: Espacio, 1 = fallé, 2 = la sabía</div>
+    <div class="actions">
+      <button class="btn fail" id="btnFail">✗ Fallé</button>
+      <button class="btn ok" id="btnOk">✓ La sabía</button>
+    </div>
+  </section>
+
+  <!-- Resultado -->
+  <section id="vEnd" class="hidden">
+    <h2 style="margin-top:4px">Sesión terminada</h2>
+    <div class="stats">
+      <div class="stat"><b id="sOk" style="color:var(--ok)">0</b>acertadas</div>
+      <div class="stat"><b id="sFail" style="color:var(--fail)">0</b>falladas</div>
+    </div>
+    <div class="panel hidden" id="failsBox">
+      <strong>Para repasar:</strong>
+      <ul class="fails" id="failsList"></ul>
+    </div>
+    <div class="actions">
+      <button class="btn" id="repetirFallos">Repetir las falladas</button>
+      <button class="btn ghost" id="volver">Volver</button>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ==========================================================================
+   TU TEMARIO  —  ESTO ES LO ÚNICO QUE TIENES QUE EDITAR
+   --------------------------------------------------------------------------
+   Estructura:   BLOQUE  →  SUBBLOQUES  →  CARTAS
+
+   Bloque (solo se puede estudiar uno a la vez):
+     id, nombre, icono, subbloques: [ ... ]
+
+   Subbloque (dentro de un bloque puedes elegir todos o solo algunos):
+     id      → identificador único dentro del bloque, sin espacios
+     nombre  → como se verá en pantalla
+     cartas  → lista de [japonés, romaji, español, nota opcional]
+
+   Si un bloque tiene un solo subbloque, no se muestra el árbol de apartados.
+   (No cambies los id una vez en uso, o se pierde el progreso de esas cartas.)
+   ========================================================================== */
+const BLOQUES = [
+  {
+    id: "expresiones", nombre: "Expresiones", icono: "💬",
+    subbloques: [
+      {
+        id: "general", nombre: "Expresiones",
+        cartas: [
+          ["おはようございます", "ohayou gozaimasu", "Buenos días"],
+          ["こんにちは", "konnichiwa", "Hola / Buenas tardes"],
+          ["こんばんは", "konbanwa", "Buenas noches (al encontrarse)"],
+          ["さようなら", "sayounara", "Adiós"],
+          ["おやすみなさい", "oyasuminasai", "Descansa / Buenas noches (al irse a dormir)"],
+          ["ありがとうございます", "arigatou gozaimasu", "Gracias"],
+          ["おねがい", "onegai", "Por favor", "Más educado: おねがいします (onegai shimasu)"],
+          ["いえいえ", "ie ie", "De nada (informal)"],
+          ["どういたしまして", "dou itashimashite", "De nada (respuesta a gracias)"],
+          ["すみません", "sumimasen", "Perdón por interrumpir / Disculpe"],
+          ["ごめんなさい", "gomen nasai", "Lo siento", "Cuando te sientes mal por lo que ha pasado"],
+          ["しつれいします", "shitsurei shimasu", "Permiso / Perdón por molestar"],
+          ["いただきます", "itadakimasu", "Que aproveche", "Se dice antes de comer"],
+          ["ごちそうさまでした", "gochisousama deshita", "Gracias por la comida", "Se dice después de comer"],
+          ["いってきます", "ittekimasu", "Me voy (al salir de casa)", "Lo dice quien sale"],
+          ["いってらっしゃい", "itterasshai", "Que te vaya bien", "Lo dice quien se queda en casa a quien se va"],
+          ["ただいま", "tadaima", "Ya estoy en casa", "Se dice al llegar a casa"],
+          ["おかえりなさい", "okaerinasai", "Bienvenido a casa", "Lo dice quien está en casa a quien llega"],
+          ["げんきですか", "genki desu ka", "¿Estás bien?"],
+          ["げんきです", "genki desu", "Estoy bien"],
+          ["まあまあです", "maamaa desu", "Estoy kili-kolo", "Equivale a «así así» o «regular»"],
+          ["げんきじゃありません", "genki ja arimasen", "No estoy bien"],
+          ["おなまえは？", "onamae wa?", "¿Cómo te llamas?"],
+          ["はい", "hai", "Sí"],
+          ["いいえ", "iie", "No"],
+          ["どちらからですか", "dochira kara desu ka", "¿De dónde eres?"],
+          ["なにごができますか", "nanigo ga dekimasu ka", "¿Qué idiomas puedes hablar?"],
+          ["はい、できます", "hai, dekimasu", "Sí, puedo hablarlo"],
+          ["はい、すこしできます", "hai, sukoshi dekimasu", "Sí, puedo hablarlo un poquito"],
+          ["べんきょうちゅうです", "benkyouchuu desu", "Lo estoy estudiando"],
+          ["いいえ、できません", "iie, dekimasen", "No puedo / No sé"],
+        ]
+      },
+    ]
+  },
+
+  {
+    id: "vocabulario", nombre: "Vocabulario", icono: "📚",
+    subbloques: [
+      {
+        id: "pronombres", nombre: "Pronombres",
+        cartas: [
+          ["わたし", "watashi", "Yo"],
+          ["あなた", "anata", "Tú"],
+          ["かれ", "kare", "Él"],
+          ["かのじょ", "kanojo", "Ella"],
+          ["わたしたち / わたしら", "watashitachi / watashira", "Nosotros / Nosotras"],
+          ["あなたたち / あなたら", "anatatachi / anatara", "Vosotros / Vosotras"],
+          ["かれら / かれたち", "karera / karetachi", "Ellos"],
+          ["かのじょたち / かのじょら", "kanojotachi / kanojora", "Ellas"],
+        ]
+      },
+      {
+        id: "mobiliario", nombre: "Mobiliario",
+        cartas: [
+          ["つくえ", "tsukue", "Escritorio"],
+          ["いす", "isu", "Silla"],
+          ["まど", "mado", "Ventana"],
+          ["ドア", "doa", "Puerta"],
+          ["ごみばこ", "gomibako", "Papelera / Contenedor de basura"],
+          ["ホワイトボード", "howaito boodo", "Pizarra blanca"],
+          ["カーテン", "kaaten", "Cortinas"],
+          ["テレビ", "terebi", "Televisión"],
+        ]
+      },
+      {
+        id: "paises", nombre: "Países e idiomas",   // ← cámbiale el nombre aquí si prefieres otro
+        cartas: [
+          // --- Países ---
+          ["くに", "kuni", "País"],
+          ["にほん", "nihon", "Japón", "Kanji: 日本"],
+          ["かんこく", "kankoku", "Corea", "Kanji: 韓国"],
+          ["ちゅうごく", "chuugoku", "China", "Kanji: 中国"],
+          ["エジプト", "ejiputo", "Egipto"],
+          ["ドイツ", "doitsu", "Alemania"],
+          ["オーストラリア", "oosutoraria", "Australia"],
+          ["スペイン", "supein", "España"],
+          ["イギリス", "igirisu", "Inglaterra"],
+          ["アメリカ", "amerika", "Estados Unidos"],
+          ["フランス", "furansu", "Francia"],
+          ["タイ", "tai", "Tailandia"],
+          ["ブラジル", "burajiru", "Brasil"],
+          ["ポルトガル", "porutogaru", "Portugal"],
+          // --- Gentilicios (país + じん) ---
+          ["じん", "jin", "Persona de… (sufijo de gentilicio)", "Se añade al nombre del país: país + じん"],
+          ["にほんじん", "nihonjin", "Japonés/a"],
+          ["かんこくじん", "kankokujin", "Coreano/a"],
+          ["ちゅうごくじん", "chuugokujin", "Chino/a"],
+          ["エジプトじん", "ejiputojin", "Egipcio/a"],
+          ["ドイツじん", "doitsujin", "Alemán/a"],
+          ["オーストラリアじん", "oosutorariajin", "Australiano/a"],
+          ["スペインじん", "supeinjin", "Español/a"],
+          ["イギリスじん", "igirisujin", "Inglés/a"],
+          ["アメリカじん", "amerikajin", "Estadounidense"],
+          ["フランスじん", "furansujin", "Francés/a"],
+          ["タイじん", "taijin", "Tailandés/a"],
+          ["ブラジルじん", "burajirujin", "Brasileño/a"],
+          ["ポルトガルじん", "porutogarujin", "Portugués/a"],
+          // --- Idiomas (país + ご) ---
+          ["ご", "go", "Idioma (sufijo)", "Se añade al nombre del país: país + ご"],
+          ["スペインご", "supeingo", "Español (idioma)"],
+          ["にほんご", "nihongo", "Japonés (idioma)"],
+          ["ちゅうごくご", "chuugokugo", "Chino (idioma)"],
+          ["ポルトガルご", "porutogarugo", "Portugués (idioma)"],
+          ["えいご", "eigo", "Inglés (idioma)"],
+          ["アラビアご", "arabiago", "Árabe (idioma)"],
+          ["かんこくご", "kankokugo", "Coreano (idioma)"],
+          ["フランスご", "furansugo", "Francés (idioma)"],
+          ["ドイツご", "doitsugo", "Alemán (idioma)"],
+          ["タイご", "taigo", "Tailandés (idioma)"],
+        ]
+      },
+    ]
+  },
+
+  {
+    id: "numeros", nombre: "Números", icono: "🔢",
+    subbloques: [
+      {
+        id: "general", nombre: "Números",
+        cartas: [
+          ["いち", "ichi", "Uno (1)", "Kanji: 一"],
+          ["に", "ni", "Dos (2)", "Kanji: 二"],
+          ["さん", "san", "Tres (3)", "Kanji: 三"],
+          ["し / よん", "shi / yon", "Cuatro (4)", "Kanji: 四"],
+          ["ご", "go", "Cinco (5)", "Kanji: 五"],
+          ["ろく", "roku", "Seis (6)", "Kanji: 六"],
+          ["しち / なな", "shichi / nana", "Siete (7)", "Kanji: 七"],
+          ["はち", "hachi", "Ocho (8)", "Kanji: 八"],
+          ["きゅう", "kyuu", "Nueve (9)", "Kanji: 九 · También: く (ku)"],
+          ["じゅう", "juu", "Diez (10)", "Kanji: 十"],
+          ["ひゃく", "hyaku", "Cien (100)", "Kanji: 百"],
+          ["さんびゃく", "sanbyaku", "Trescientos (300)", "Cambia: byaku, no hyaku"],
+          ["ろっぴゃく", "roppyaku", "Seiscientos (600)", "Cambia: ppyaku, no hyaku"],
+          ["はっぴゃく", "happyaku", "Ochocientos (800)", "Cambia: ppyaku, no hyaku"],
+          ["せん", "sen", "Mil (1000)", "Kanji: 千"],
+          ["さんぜん", "sanzen", "Tres mil (3000)", "Cambia: zen, no sen"],
+          ["はっせん", "hassen", "Ocho mil (8000)", "Con doble s"],
+        ]
+      },
+    ]
+  },
+  // ← aquí puedes añadir más bloques, o más subbloques dentro de uno existente
+];
+
+/* ==========================================================================
+   LÓGICA (no hace falta tocar nada de aquí hacia abajo)
+   ========================================================================== */
+const $ = s => document.querySelector(s);
+
+/* ---------- Modo claro / oscuro ---------- */
+function aplicarTema(t) {
+  document.documentElement.dataset.theme = t;
+  $("#temaBtn").textContent = t === "dark" ? "☀️" : "🌙";
+  localStorage.setItem("jp-tema", t);
+}
+aplicarTema(localStorage.getItem("jp-tema") ||
+  (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+$("#temaBtn").onclick = () =>
+  aplicarTema(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+
+/* Dónde se guardan los fallos. sessionStorage = se borra al cerrar la pestaña.
+   Si quieres que se conserven siempre, cambia "sessionStorage" por "localStorage". */
+const STORE = sessionStorage;
+const KEY = "jp-flashcards-progreso";
+let progreso = JSON.parse(STORE.getItem(KEY) || "{}");
+const guardar = () => STORE.setItem(KEY, JSON.stringify(progreso));
+
+/* Duración del giro de la tarjeta (debe coincidir con el CSS: .card transition .5s) */
+const GIRO_MS = 520;
+
+/* ---------- Datos aplanados ---------- */
+const todas = BLOQUES.flatMap(b => b.subbloques.flatMap(s => s.cartas.map(([jp, lectura, es, nota]) => ({
+  id: b.id + "|" + s.id + "|" + jp,
+  bloque: b.id, sub: s.id, subNombre: s.nombre, bloqueNombre: b.nombre,
+  jp, lectura, es, nota
+}))));
+
+/* Selección: un solo bloque a la vez + los subbloques marcados dentro de él */
+const cfg = { bloque: BLOQUES[0].id, subs: {} };
+BLOQUES.forEach(b => cfg.subs[b.id] = new Set(b.subbloques.map(s => s.id)));
+
+const bloqueActual = () => BLOQUES.find(b => b.id === cfg.bloque);
+const seleccion = () => todas.filter(c => c.bloque === cfg.bloque && cfg.subs[cfg.bloque].has(c.sub));
+
+let modo = "flash";           // learn | flash | study | end
+let deck = [], idx = 0, girada = false, animando = false, ok = [], fail = [];
+
+const esc = s => { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; };
+const barajar = a => { for (let i = a.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ---------- Menú lateral (en móvil: ⋮ abre y cierra) ---------- */
+const menuAbierto = () => $("#side").classList.contains("open");
+const abrirMenu = () => { $("#side").classList.add("open"); $("#overlay").classList.add("show"); };
+const cerrarMenu = () => { $("#side").classList.remove("open"); $("#overlay").classList.remove("show"); };
+$("#abrir").onclick = () => menuAbierto() ? cerrarMenu() : abrirMenu();
+$("#cerrar").onclick = cerrarMenu;
+$("#overlay").onclick = cerrarMenu;
+
+function pintarSidebar() {
+  const lb = $("#listaBloques");
+  lb.innerHTML = "";
+  BLOQUES.forEach(b => {
+    const n = todas.filter(c => c.bloque === b.id).length;
+    const btn = document.createElement("button");
+    btn.className = "mode" + (b.id === cfg.bloque ? " on" : "");
+    btn.innerHTML = `<span>${b.icono || ""} ${esc(b.nombre)}</span><small>${n}</small>`;
+    btn.onclick = () => { cfg.bloque = b.id; refrescar(); };
+    lb.appendChild(btn);
+
+    // Árbol: del bloque activo salen sus apartados
+    if (b.id === cfg.bloque && b.subbloques.length > 1) {
+      const tree = document.createElement("div");
+      tree.className = "tree";
+      tree.innerHTML =
+        `<div class="tree-tools">Elegir: <button class="mini" data-a="all">todos</button>` +
+        `<button class="mini" data-a="none">ninguno</button></div><div class="stem"></div>`;
+      tree.querySelector('[data-a="all"]').onclick = () => {
+        b.subbloques.forEach(s => cfg.subs[b.id].add(s.id)); refrescar(); };
+      tree.querySelector('[data-a="none"]').onclick = () => { cfg.subs[b.id].clear(); refrescar(); };
+
+      b.subbloques.forEach(s => {
+        const br = document.createElement("div");
+        br.className = "branch";
+        br.innerHTML = `<i class="conn"></i>`;
+        const chip = document.createElement("button");
+        chip.className = "chip" + (cfg.subs[b.id].has(s.id) ? " on" : "");
+        chip.innerHTML = `<span>${esc(s.nombre)}</span><small>${s.cartas.length}</small>`;
+        chip.onclick = () => {
+          const set = cfg.subs[b.id];
+          set.has(s.id) ? set.delete(s.id) : set.add(s.id);
+          refrescar();
+        };
+        br.appendChild(chip);
+        tree.appendChild(br);
+      });
+      lb.appendChild(tree);
+    }
+  });
+
+  $("#mLearn").classList.toggle("on", modo === "learn");
+  $("#mFlash").classList.toggle("on", modo !== "learn");
+  $("#optsFlash").classList.toggle("hidden", modo === "learn");
+}
+
+/* ---------- Vistas ---------- */
+function render() {
+  const vistas = { learn: "vLearn", flash: "vFlash", study: "vStudy", end: "vEnd" };
+  Object.entries(vistas).forEach(([m, id]) => $("#" + id).classList.toggle("hidden", m !== modo));
+  $("#ocultar").classList.toggle("hidden", modo !== "learn");
+  refrescar();
+}
+
+function refrescar() {
+  pintarSidebar();
+  $("#titulo").textContent = modo === "learn" ? "Aprender · " + bloqueActual().nombre
+    : modo === "end" ? "Resultado" : "Flashcards · " + bloqueActual().nombre;
+  if (modo === "learn") pintarLearn();
+  if (modo === "flash") pintarFlashHome();
+}
+
+/* ---------- Modo Aprender ---------- */
+function pintarLearn() {
+  const b = bloqueActual();
+  const sel = seleccion();
+  $("#learnCount").textContent = sel.length + (sel.length === 1 ? " tarjeta" : " tarjetas");
+  $("#irRepasar").disabled = sel.length === 0;
+  const cont = $("#learnList");
+  cont.classList.toggle("h-es", $("#ocultar").value === "es");
+  cont.classList.toggle("h-jp", $("#ocultar").value === "jp");
+  cont.innerHTML = "";
+  if (!sel.length) { cont.innerHTML = `<p class="sub">No hay nada seleccionado. Abre el menú ⋮ y elige algún apartado.</p>`; return; }
+
+  b.subbloques.forEach(s => {
+    const cartas = sel.filter(c => c.sub === s.id);
+    if (!cartas.length) return;
+    if (b.subbloques.length > 1) {
+      const h = document.createElement("div");
+      h.className = "theme-title";
+      h.innerHTML = `<span>${esc(s.nombre)}</span><span>${cartas.length}</span>`;
+      cont.appendChild(h);
+    }
+    cartas.forEach(c => {
+      const p = progreso[c.id];
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML =
+        (p && p.fail > 0 ? `<span class="badge">🔥 fallada ${p.fail} ${p.fail === 1 ? "vez" : "veces"}</span>` : "") +
+        `<div class="jp jpfont">${esc(c.jp)}</div>` +
+        `<div class="ro">${esc(c.lectura || "⚠ falta romaji")}</div>` +
+        `<div class="es-txt">${esc(c.es)}</div>` +
+        (c.nota ? `<div class="nt">${esc(c.nota)}</div>` : "");
+      el.onclick = () => el.classList.toggle("visto");
+      cont.appendChild(el);
+    });
+  });
+}
+$("#ocultar").onchange = pintarLearn;
+
+/* ---------- Inicio de flashcards ---------- */
+function pintarFlashHome() {
+  const sel = seleccion();
+  $("#flashBloque").textContent = "Bloque: " + bloqueActual().nombre;
+  $("#flashCount").textContent = sel.length;
+  const dif = sel.filter(c => progreso[c.id] && progreso[c.id].fail > 0).length;
+  $("#flashDificiles").textContent = dif > 0
+    ? `${dif} con fallos: saldrán más veces.`
+    : "Aún no hay fallos registrados en esta sesión.";
+  $("#empezar").disabled = sel.length === 0;
+}
+
+/* ---------- Construcción del mazo (siempre aleatorio, repite más las falladas) ---------- */
+function construirMazo(lista, ponderar) {
+  let l = [];
+  lista.forEach(c => {
+    let copias = 1;
+    if (ponderar && progreso[c.id]) {
+      const p = progreso[c.id];
+      const score = p.fail - p.ok * 0.5;            // cada acierto compensa medio fallo
+      copias = 1 + Math.max(0, Math.min(3, Math.floor(score)));  // hasta 4 apariciones
+    }
+    for (let i = 0; i < copias; i++) l.push(c);
+  });
+  barajar(l);
+  // evitar que la misma tarjeta salga dos veces seguidas
+  for (let i = 1; i < l.length; i++) {
+    if (l[i].id === l[i - 1].id) {
+      const j = l.findIndex((x, k) => k > i && x.id !== l[i].id);
+      if (j > -1) [l[i], l[j]] = [l[j], l[i]];
+    }
+  }
+  return l;
+}
+
+/* ---------- Sesión ---------- */
+function empezar(lista, ponderar = true) {
+  const d = $("#dir").value;
+  deck = construirMazo(lista, ponderar)
+    .map(c => ({ ...c, dir: d === "mixto" ? (Math.random() < .5 ? "jp-es" : "es-jp") : d }));
+  idx = 0; ok = []; fail = []; animando = false;
+  modo = "study"; render(); pintarCarta();
+}
+
+function pintarCarta() {
+  const c = deck[idx];
+  girada = false; $("#card").classList.remove("flipped");
+  $("#posicion").textContent = `${idx + 1} / ${deck.length}`;
+  $("#barra").style.width = (idx / deck.length * 100) + "%";
+
+  const tag = `<span class="tag">${esc(c.subNombre)}</span>`;
+  const nt  = c.nota ? `<div class="note">${esc(c.nota)}</div>` : "";
+  const ladoJP = `<div class="big">${esc(c.jp)}</div>` +
+                 `<div class="read">${esc(c.lectura || "⚠ falta romaji")}</div>`;
+  const ladoES = `<div class="big es">${esc(c.es)}</div>`;
+
+  if (c.dir === "jp-es") {
+    $("#front").innerHTML = tag + ladoJP;
+    $("#back").innerHTML  = tag + ladoES + nt;
+  } else {
+    $("#front").innerHTML = tag + ladoES;
+    $("#back").innerHTML  = tag + ladoJP + nt;
+  }
+  actualizarBotones();
+}
+
+const TOUCH = matchMedia("(pointer: coarse)").matches;   // true en móvil/tablet
+if (TOUCH) $("#hint").textContent = "Toca para girar · Desliza → la sabía · ← fallé";
+
+function actualizarBotones() {
+  // En móvil no se puede pasar sin girar la tarjeta
+  const bloquear = TOUCH && !girada;
+  $("#btnOk").disabled = bloquear;
+  $("#btnFail").disabled = bloquear;
+}
+
+function avisarGirar() {
+  const sc = $("#scene"), h = $("#hint");
+  sc.classList.remove("shake"); void sc.offsetWidth; sc.classList.add("shake");
+  h.classList.add("warn");
+  setTimeout(() => { sc.classList.remove("shake"); h.classList.remove("warn"); }, 600);
+}
+
+const girar = () => {
+  if (animando) return;
+  girada = !girada;
+  $("#card").classList.toggle("flipped", girada);
+  actualizarBotones();
+};
+
+function responder(acierto, instantaneo = false) {
+  if (animando || modo !== "study") return;
+  if (TOUCH && !girada) { avisarGirar(); return; }
+  const c = deck[idx];
+  const p = progreso[c.id] || { ok: 0, fail: 0, last: null };
+  acierto ? p.ok++ : p.fail++; p.last = acierto ? 1 : 0;
+  progreso[c.id] = p; guardar();
+  (acierto ? ok : fail).push(c);
+  idx++;
+
+  if (idx >= deck.length) return terminar();
+
+  if (instantaneo) {
+    // la tarjeta ya salió volando: cambiamos todo sin animar el giro
+    const card = $("#card");
+    card.style.transition = "none";
+    pintarCarta();
+    void card.offsetWidth;
+    card.style.transition = "";
+  } else if (girada) {
+    // 1) giramos la tarjeta de vuelta con el texto antiguo todavía puesto
+    animando = true;
+    girada = false;
+    $("#card").classList.remove("flipped");
+    actualizarBotones();
+    // 2) cuando termina el giro, cambiamos el texto a la nueva tarjeta
+    setTimeout(() => {
+      animando = false;
+      if (modo === "study") pintarCarta();
+    }, GIRO_MS);
+  } else {
+    pintarCarta();
+  }
+}
+
+function terminar() {
+  const unicas = [...new Map(fail.map(c => [c.id, c])).values()];
+  $("#sOk").textContent = ok.length; $("#sFail").textContent = fail.length;
+  $("#failsBox").classList.toggle("hidden", unicas.length === 0);
+  $("#repetirFallos").classList.toggle("hidden", unicas.length === 0);
+  $("#failsList").innerHTML = unicas.map(c => `<li>${esc(c.jp)} (${esc(c.lectura)}) — ${esc(c.es)}</li>`).join("");
+  modo = "end"; render();
+}
+
+/* ---------- Eventos ---------- */
+$("#mLearn").onclick = () => { modo = "learn"; cerrarMenu(); render(); };
+$("#mFlash").onclick = () => { modo = "flash"; cerrarMenu(); render(); };
+$("#irRepasar").onclick = () => { modo = "flash"; render(); };
+$("#empezar").onclick = () => { cerrarMenu(); empezar(seleccion()); };
+
+/* ---------- Gestos: derecha = la sabía, izquierda = fallé ---------- */
+const scene = $("#scene");
+let sx = 0, sy = 0, dx = 0, arrastrando = false, movido = false, ignorarClick = false;
+const UMBRAL = 80;
+
+scene.onclick = () => { if (ignorarClick) return; girar(); };
+
+scene.addEventListener("touchstart", e => {
+  if (animando || modo !== "study") return;
+  const t = e.touches[0];
+  sx = t.clientX; sy = t.clientY; dx = 0;
+  arrastrando = true; movido = false;
+  scene.style.transition = "none";
+}, { passive: true });
+
+scene.addEventListener("touchmove", e => {
+  if (!arrastrando) return;
+  const t = e.touches[0];
+  dx = t.clientX - sx;
+  const dy = t.clientY - sy;
+  if (!movido && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) { arrastrando = false; return; }
+  if (Math.abs(dx) > 10) movido = true;
+  const mover = girada ? dx : dx * 0.25;      // si no está girada, resiste
+  scene.style.transform = `translateX(${mover}px) rotate(${mover / 25}deg)`;
+  scene.dataset.dir = girada && Math.abs(dx) > UMBRAL ? (dx > 0 ? "ok" : "fail") : "";
+}, { passive: true });
+
+scene.addEventListener("touchend", () => {
+  if (!arrastrando) return;
+  arrastrando = false;
+  scene.style.transition = "";
+  scene.dataset.dir = "";
+  if (!movido) return;                          // fue un toque normal: lo gestiona el click
+  ignorarClick = true; setTimeout(() => ignorarClick = false, 350);
+
+  if (!girada) { scene.style.transform = ""; avisarGirar(); return; }
+  if (Math.abs(dx) < UMBRAL) { scene.style.transform = ""; return; }
+
+  // Soltó pasado el umbral: la tarjeta sale volando y pasamos a la siguiente
+  const acierto = dx > 0;
+  animando = true;
+  scene.style.transition = "transform .22s, opacity .22s";
+  scene.style.transform = `translateX(${acierto ? 120 : -120}%) rotate(${acierto ? 18 : -18}deg)`;
+  scene.style.opacity = "0";
+  setTimeout(() => {
+    animando = false;
+    scene.style.transition = "none";
+    scene.style.transform = "";
+    responder(acierto, true);
+    void scene.offsetWidth;
+    scene.style.transition = "opacity .2s";
+    scene.style.opacity = "1";
+    setTimeout(() => scene.style.transition = "", 250);
+  }, 220);
+});
+
+$("#btnOk").onclick = () => responder(true);
+$("#btnFail").onclick = () => responder(false);
+$("#salir").onclick = () => { animando = false; modo = "flash"; render(); };
+$("#volver").onclick = () => { modo = "flash"; render(); };
+$("#repetirFallos").onclick = () => empezar([...new Map(fail.map(c => [c.id, c])).values()], false);
+$("#resetProgreso").onclick = () => {
+  if (confirm("¿Borrar los fallos guardados?")) { progreso = {}; guardar(); refrescar(); }
+};
+document.addEventListener("keydown", e => {
+  if (modo !== "study") return;
+  if (e.code === "Space") { e.preventDefault(); girar(); }
+  if (e.key === "1" || e.key === "ArrowLeft") responder(false);
+  if (e.key === "2" || e.key === "ArrowRight") responder(true);
+});
+
+render();
+</script>
+</body>
+</html>

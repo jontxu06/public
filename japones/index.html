@@ -81,7 +81,6 @@
   .btn:disabled{opacity:.4;cursor:not-allowed}
   .btn.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-weight:500;box-shadow:none}
   .btn.ok{background:var(--ok)} .btn.fail{background:var(--fail)}
-  .side .btn.ghost{margin-top:24px;font-size:.85rem;padding:11px}
 
   /* ---------- Contenido ---------- */
   .main{padding:18px 16px 40px;max-width:720px;margin:0 auto}
@@ -103,7 +102,6 @@
   .item .ro{font-size:1.5rem;opacity:.85;transition:filter .15s}
   .item .es-txt{font-size:1.08rem;color:var(--es);margin-top:6px;font-weight:600;transition:filter .15s}
   .item .nt{font-size:.85rem;color:var(--muted);font-style:italic;margin-top:2px;transition:filter .15s}
-  .item .badge{align-self:flex-start;font-size:.72rem;color:var(--fail);margin-bottom:4px;font-weight:700}
   .h-es .item:not(.visto) .es-txt,
   .h-es .item:not(.visto) .nt{filter:blur(8px);user-select:none}
   .h-jp .item:not(.visto) .jp,
@@ -191,8 +189,6 @@
       <option value="mixto">Mezclado</option>
     </select>
   </div>
-
-  <button class="btn ghost" id="resetProgreso">Borrar mis fallos guardados</button>
 </aside>
 
 <!-- ============ CONTENIDO ============ -->
@@ -222,7 +218,6 @@
     <div class="panel center">
       <p class="sub" id="flashBloque" style="margin-bottom:0"></p>
       <div class="big-num" id="flashCount">0</div>
-      <p class="sub" id="flashDificiles"></p>
       <button class="btn" id="empezar">Empezar</button>
     </div>
     <p class="hint">Elige bloque y apartados en el menú ⋮</p>
@@ -251,10 +246,15 @@
     <div class="stats">
       <div class="stat"><b id="sOk" style="color:var(--ok)">0</b>acertadas</div>
       <div class="stat"><b id="sFail" style="color:var(--fail)">0</b>falladas</div>
+      <div class="stat"><b id="sPct">0%</b>de acierto</div>
     </div>
     <div class="panel hidden" id="failsBox">
-      <strong>Para repasar:</strong>
+      <strong>Para repasar (falladas):</strong>
       <ul class="fails" id="failsList"></ul>
+    </div>
+    <div class="panel hidden" id="okBox" style="margin-top:12px">
+      <strong>Las que sabías:</strong>
+      <ul class="fails" id="okList"></ul>
     </div>
     <div class="actions">
       <button class="btn" id="repetirFallos">Repetir las falladas</button>
@@ -279,24 +279,25 @@
      cartas  → lista de [japonés, romaji, español, nota opcional]
 
    Si un bloque tiene un solo subbloque, no se muestra el árbol de apartados.
-   (No cambies los id una vez en uso, o se pierde el progreso de esas cartas.)
    ========================================================================== */
 const BLOQUES = [
   {
     id: "expresiones", nombre: "Expresiones", icono: "💬",
     subbloques: [
       {
-        id: "general", nombre: "Frases y expresiones",
+        id: "saludos", nombre: "Saludos y cortesía",
         cartas: [
           ["おはようございます", "ohayoo gozaimasu", "Buenos días"],
           ["こんにちは", "konnichiwa", "Hola / Buenas tardes"],
           ["こんばんは", "konbanwa", "Buenas noches (al encontrarse)"],
-          ["さようなら", "sayoonara", "Adiós"],
           ["おやすみなさい", "oyasuminasai", "Descansa / Buenas noches (al irse a dormir)"],
+          ["さようなら", "sayoonara", "Adiós"],
+          ["はじめまして", "hajimemashite", "Encantado/a de conocerte", "Se dice al conocer a alguien por primera vez"],
+          ["どうぞよろしくおねがいします", "doozo yoroshiku onegaishimasu", "Encantado/a / Un placer", "Se dice al presentarse"],
           ["ありがとうございます", "arigatoo gozaimasu", "Gracias"],
-          ["おねがい", "onegai", "Por favor", "Más educado: おねがいします (onegai shimasu)"],
-          ["いえいえ", "ie ie", "De nada (informal)"],
           ["どういたしまして", "doo itashimashite", "De nada (respuesta a gracias)"],
+          ["いえいえ", "ie ie", "De nada (informal)"],
+          ["おねがい", "onegai", "Por favor", "Más educado: おねがいします (onegai shimasu)"],
           ["すみません", "sumimasen", "Perdón por interrumpir / Disculpe"],
           ["ごめんなさい", "gomen nasai", "Lo siento", "Cuando te sientes mal por lo que ha pasado"],
           ["しつれいします", "shitsuree shimasu", "Permiso / Perdón por molestar"],
@@ -306,15 +307,25 @@ const BLOQUES = [
           ["いってらっしゃい", "itterasshai", "Que te vaya bien", "Lo dice quien se queda en casa a quien se va"],
           ["ただいま", "tadaima", "Ya estoy en casa", "Se dice al llegar a casa"],
           ["おかえりなさい", "okaerinasai", "Bienvenido a casa", "Lo dice quien está en casa a quien llega"],
+        ]
+      },
+      {
+        id: "respuestas", nombre: "Respuestas y reacciones",
+        cartas: [
+          ["はい", "hai", "Sí"],
+          ["いいえ", "iie", "No"],
           ["げんきです", "genki desu", "Estoy bien"],
           ["まあまあです", "maamaa desu", "Estoy kili-kolo", "Equivale a «así así» o «regular»"],
           ["げんきじゃありません", "genki ja arimasen", "No estoy bien"],
-          ["はい", "hai", "Sí"],
-          ["いいえ", "iie", "No"],
           ["はい、できます", "hai, dekimasu", "Sí, puedo hablarlo"],
           ["はい、すこしできます", "hai, sukoshi dekimasu", "Sí, puedo hablarlo un poquito"],
           ["べんきょうちゅうです", "benkyoochuu desu", "Lo estoy estudiando"],
           ["いいえ、できません", "iie, dekimasen", "No puedo / No sé"],
+          ["そうですね", "soo desu ne", "Ah, ya veo"],
+          ["そうですか", "soo desu ka", "¿Ah, sí?"],
+          ["わかりません", "wakarimasen", "No lo sé"],
+          ["ちょっとまってください", "chotto matte kudasai", "Espera un poco, por favor"],
+          ["わたしです", "watashi desu", "Soy yo"],
         ]
       },
       {
@@ -322,8 +333,72 @@ const BLOQUES = [
         cartas: [
           ["げんきですか", "genki desu ka", "¿Estás bien?"],
           ["おなまえは？", "onamae wa?", "¿Cómo te llamas?"],
+          ["かれのおなまえは？", "kare no onamae wa?", "¿Cuál es su nombre? (de él)"],
+          ["かのじょのおなまえは？", "kanojo no onamae wa?", "¿Cuál es su nombre? (de ella)"],
           ["どちらからですか", "dochira kara desu ka", "¿De dónde eres?"],
           ["なにごができますか", "nanigo ga dekimasu ka", "¿Qué idiomas puedes hablar?"],
+          ["〜ご、できますか", "~go, dekimasu ka", "¿Puedes hablar este idioma?", "Pon el idioma delante. Ej.: にほんご、できますか (Nihongo, dekimasu ka)"],
+          ["くには？", "kuni wa?", "¿Qué país es?"],
+          ["すうじは？", "suuji wa?", "¿Qué número es?"],
+          ["おしごとは？", "oshigoto wa?", "¿Cuál es su trabajo?"],
+          ["ばしょは？", "basho wa?", "¿Cuál es el lugar?"],
+          ["だれですか", "dare desu ka", "¿Quién es?"],
+          ["だれのノートですか", "dare no nooto desu ka", "¿De quién es el cuaderno?", "だれの = ¿de quién?"],
+          ["あなたはたなかさんですか", "anata wa Tanaka san desu ka", "¿Eres Tanaka?"],
+          ["かんこくじんですか", "Kankokujin desu ka", "¿Es coreano/a?"],
+          ["これはえんぴつですか", "kore wa enpitsu desu ka", "¿Esto es un lápiz?"],
+          ["あれはとけいですか", "are wa tokee desu ka", "¿Aquello es un reloj?"],
+          ["それもかばんですか", "sore mo kaban desu ka", "¿Eso también es un bolso?"],
+          ["つくえですか", "tsukue desu ka", "¿Es un escritorio?", "Para preguntar, añade か al final"],
+          ["えいごのきょうかしょですか", "eego no kyookasho desu ka", "¿Es un libro de texto de inglés?"],
+          ["おじいさんはなんさいですか", "ojiisan wa nansai desu ka", "¿Cuántos años tiene (tu) abuelo?"],
+        ]
+      },
+      {
+        id: "estructuras", nombre: "Estructuras",
+        cartas: [
+          ["〜は〜です", "~ wa ~ desu", "〜 es 〜", "は se lee «wa» (partícula de tema) · です = ser/estar"],
+          ["〜は〜じゃありません", "~ wa ~ ja arimasen", "〜 no es 〜", "Forma negativa de です"],
+          ["〜ですか", "~ desu ka", "¿〜?", "Para preguntar se añade か al final"],
+          ["はい、〜です", "hai, ~ desu", "Sí, es 〜"],
+          ["いいえ、〜じゃありません", "iie, ~ ja arimasen", "No, no es 〜"],
+          ["〜も〜です", "~ mo ~ desu", "〜 también es 〜", "も = «también» (o «tampoco» con negativo); sustituye a は"],
+          ["〜の〜", "~ no ~", "〜 de 〜", "の = «de»: primero el dueño y luego la cosa"],
+        ]
+      },
+      {
+        id: "modelo", nombre: "Frases modelo",
+        cartas: [
+          ["わたしはマリアです", "watashi wa Maria desu", "Yo soy María"],
+          ["かのじょはサラじゃありません", "kanojo wa Sara ja arimasen", "Ella no es Sara"],
+          ["はい、わたしはたなかさんです", "hai, watashi wa Tanaka san desu", "Sí, yo soy Tanaka"],
+          ["いいえ、たなかさんじゃありません", "iie, Tanaka san ja arimasen", "No, no soy Tanaka"],
+          ["イギリスです", "Igirisu desu", "(Soy) de Inglaterra", "Respuesta a どちらからですか"],
+          ["わたしはイギリスじんです", "watashi wa Igirisujin desu", "Yo soy inglés"],
+          ["あなたはタイじんじゃありません", "anata wa Taijin ja arimasen", "Tú no eres tailandés"],
+          ["きょうしです", "kyooshi desu", "(Es) profesor/a", "Respuesta a おしごとは？"],
+          ["これはボールペンです", "kore wa boorupen desu", "Esto es un bolígrafo"],
+          ["それはえんぴつじゃありません", "sore wa enpitsu ja arimasen", "Eso no es un lápiz"],
+          ["はい、それはえんぴつです", "hai, sore wa enpitsu desu", "Sí, eso es un lápiz"],
+          ["いいえ、それはえんぴつじゃありません", "iie, sore wa enpitsu ja arimasen", "No, eso no es un lápiz"],
+          ["いいえ、それはかばんじゃありません。かさです", "iie, sore wa kaban ja arimasen. kasa desu", "No, eso no es un bolso. Es un paraguas"],
+          ["わたしはこうむいんです。かのじょもこうむいんです", "watashi wa koomuin desu. kanojo mo koomuin desu", "Yo soy funcionario/a. Ella también es funcionaria"],
+          ["これはじしょじゃありません。それもじしょじゃありません", "kore wa jisho ja arimasen. sore mo jisho ja arimasen", "Esto no es un diccionario. Eso tampoco es un diccionario"],
+          ["これはかさです。あれもかさですか", "kore wa kasa desu. are mo kasa desu ka", "Esto es un paraguas. ¿Aquello también es un paraguas?"],
+          ["とよたのかいしゃいん", "Toyota no kaishain", "Empleado de Toyota"],
+          ["にほんごのきょうかしょ", "nihongo no kyookasho", "Libro de japonés"],
+          ["かのじょのめがね", "kanojo no megane", "Sus gafas (de ella)"],
+          ["やまもとさんのノートです", "Yamamoto san no nooto desu", "El cuaderno es de Yamamoto"],
+          ["わたしのきょうかしょです", "watashi no kyookasho desu", "Es mi libro de texto"],
+          ["せんせいのシャーペンです", "sensee no shaapen desu", "Es el portaminas del profesor"],
+          ["あなたのじしょです", "anata no jisho desu", "Es tu diccionario"],
+          ["いいえ、えいごのきょうかしょじゃありません。フランスごのきょうかしょです", "iie, eego no kyookasho ja arimasen. Furansugo no kyookasho desu", "No, no es un libro de texto de inglés. Es de francés"],
+          ["かぞくはさんにんです", "kazoku wa sannin desu", "La familia son tres personas"],
+          ["おとうとはじゅっさいです", "otooto wa jussai desu", "Mi hermano pequeño tiene 10 años"],
+          ["はははきょうしです", "haha wa kyooshi desu", "Mi madre es profesora"],
+          ["これはおっとのパソコンです", "kore wa otto no pasokon desu", "Este es el ordenador de mi marido"],
+          ["たなかさんのおくさんはちゅうごくじんです", "Tanaka san no okusan wa Chuugokujin desu", "La mujer de Tanaka es china"],
+          ["かのじょのおねえさんはにほんごのせんせいです", "kanojo no oneesan wa nihongo no sensee desu", "Su hermana mayor es profesora de japonés"],
         ]
       },
     ]
@@ -346,6 +421,15 @@ const BLOQUES = [
         ]
       },
       {
+        id: "tratamientos", nombre: "Tratamientos",
+        cartas: [
+          ["さん", "san", "Sr. / Sra.", "Con desconocidos o en entornos formales · Ej.: たなかさん (Tanaka san)"],
+          ["さま", "sama", "Estimado/a Sr. / Sra.", "Para alguien en posición superior, como un cliente · Ej.: まえださま (Maeda sama)"],
+          ["くん", "kun", "-ito (afectivo, chicos)", "Con niños y amigos varones · Ej.: ゆうたくん (Yuuta kun)"],
+          ["ちゃん", "chan", "-ita (afectivo, chicas)", "Con niñas y amigas · Ej.: はるちゃん (Haru chan, «Harucita»)"],
+        ]
+      },
+      {
         id: "mobiliario", nombre: "Mobiliario",
         cartas: [
           ["つくえ", "tsukue", "Escritorio"],
@@ -356,6 +440,17 @@ const BLOQUES = [
           ["ホワイトボード", "howaito boodo", "Pizarra blanca"],
           ["カーテン", "kaaten", "Cortinas"],
           ["テレビ", "terebi", "Televisión"],
+        ]
+      },
+      {
+        id: "personales", nombre: "Objetos personales",
+        cartas: [
+          ["かさ", "kasa", "Paraguas"],
+          ["かばん", "kaban", "Bolso / Maleta"],
+          ["くつ", "kutsu", "Zapatos"],
+          ["けいたい", "keetai", "Móvil", "Forma completa: けいたいでんわ (keetai denwa)"],
+          ["とけい", "tokee", "Reloj"],
+          ["めがね", "megane", "Gafas"],
         ]
       },
       {
@@ -392,6 +487,89 @@ const BLOQUES = [
           ["ブラジル\nブラジルじん", "Burajiru\nBurajirujin",
             "Brasil\nBrasileño/a (persona)", "Su idioma es el portugués: ポルトガルご"],
           ["アラビアご", "Arabiago", "Árabe (idioma)", "Excepción: no lleva el nombre de un país"],
+        ]
+      },
+    ]
+  },
+
+  {
+    id: "trabajo", nombre: "Trabajo y oficina", icono: "💼",
+    subbloques: [
+      {
+        id: "trabajos", nombre: "Trabajos",
+        cartas: [
+          ["きょうし", "kyooshi", "Profesor/a"],
+          ["せんせい", "sensee", "Profesor/a (maestro/a)", "También se usa para dirigirse a un profesor"],
+          ["がくせい", "gakusee", "Estudiante"],
+          ["かいしゃいん", "kaishain", "Empleado/a de una empresa"],
+          ["しゅふ", "shufu", "Amo/a de casa"],
+          ["ぎんこういん", "ginkooin", "Empleado/a de un banco", "Banquero/a"],
+          ["けんきゅうしゃ", "kenkyuusha", "Investigador/a"],
+          ["こうむいん", "koomuin", "Funcionario/a"],
+          ["エンジニア", "enjinia", "Ingeniero/a"],
+        ]
+      },
+      {
+        id: "lugares", nombre: "Lugares de trabajo",
+        cartas: [
+          ["かいしゃ", "kaisha", "Empresa"],
+          ["ぎんこう", "ginkoo", "Banco"],
+          ["がっこう", "gakkoo", "Colegio"],
+          ["だいがく", "daigaku", "Universidad"],
+          ["びょういん", "byooin", "Hospital"],
+        ]
+      },
+      {
+        id: "oficina", nombre: "Material de oficina y clase",
+        cartas: [
+          ["ノート", "nooto", "Cuaderno"],
+          ["えんぴつ", "enpitsu", "Lápiz"],
+          ["シャーペン", "shaapen", "Portaminas"],
+          ["ボールペン", "boorupen", "Bolígrafo"],
+          ["けしゴム", "keshigomu", "Goma de borrar"],
+          ["じしょ", "jisho", "Diccionario"],
+          ["きょうかしょ", "kyookasho", "Libro de texto"],
+          ["パソコン", "pasokon", "Ordenador"],
+          ["シーディー", "shiidii", "CD"],
+        ]
+      },
+    ]
+  },
+
+  {
+    id: "familia", nombre: "Familia", icono: "👨‍👩‍👧",
+    subbloques: [
+      {
+        id: "mia", nombre: "Mi familia",
+        cartas: [
+          ["かぞく", "kazoku", "Familia"],
+          ["そふ", "sofu", "Mi abuelo"],
+          ["そぼ", "sobo", "Mi abuela"],
+          ["ちち", "chichi", "Mi padre"],
+          ["はは", "haha", "Mi madre"],
+          ["あに", "ani", "Mi hermano mayor"],
+          ["あね", "ane", "Mi hermana mayor"],
+          ["おとうと", "otooto", "Mi hermano pequeño"],
+          ["いもうと", "imooto", "Mi hermana pequeña"],
+          ["こども", "kodomo", "Mis hijos / Niño/s"],
+          ["おっと", "otto", "Mi marido"],
+          ["つま", "tsuma", "Mi mujer"],
+        ]
+      },
+      {
+        id: "otros", nombre: "Familia de otros",
+        cartas: [
+          ["おじいさん", "ojiisan", "Abuelo", "Para la familia de otra persona"],
+          ["おばあさん", "obaasan", "Abuela"],
+          ["おとうさん", "otoosan", "Padre"],
+          ["おかあさん", "okaasan", "Madre"],
+          ["おにいさん", "oniisan", "Hermano mayor"],
+          ["おねえさん", "oneesan", "Hermana mayor"],
+          ["おとうとさん", "otootosan", "Hermano pequeño"],
+          ["いもうとさん", "imootosan", "Hermana pequeña"],
+          ["おこさん", "okosan", "El/los hijo/s de otro"],
+          ["ごしゅじん", "goshujin", "Marido"],
+          ["おくさん", "okusan", "Mujer"],
         ]
       },
     ]
@@ -443,13 +621,6 @@ aplicarTema(localStorage.getItem("jp-tema") ||
 $("#temaBtn").onclick = () =>
   aplicarTema(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 
-/* Dónde se guardan los fallos. sessionStorage = se borra al cerrar la pestaña.
-   Si quieres que se conserven siempre, cambia "sessionStorage" por "localStorage". */
-const STORE = sessionStorage;
-const KEY = "jp-flashcards-progreso";
-let progreso = JSON.parse(STORE.getItem(KEY) || "{}");
-const guardar = () => STORE.setItem(KEY, JSON.stringify(progreso));
-
 /* Duración del giro de la tarjeta (debe coincidir con el CSS: .card transition .5s) */
 const GIRO_MS = 520;
 
@@ -476,6 +647,16 @@ const esc = s => { const d = document.createElement("div"); d.textContent = s ??
 const lineas = s => String(s ?? "").split("\n");
 const plano = s => String(s ?? "").replace(/\n/g, " / ");
 const esMulti = c => c.jp.includes("\n");
+
+/* Tamaño de letra según la longitud, para que las frases largas quepan en la tarjeta */
+function tamJP(c) {
+  const n = Math.max(c.jp.length, (c.lectura || "").length);
+  return n <= 14 ? "2.1rem" : n <= 24 ? "1.8rem" : n <= 40 ? "1.45rem" : n <= 60 ? "1.2rem" : "1.05rem";
+}
+function tamES(c) {
+  const n = c.es.length;
+  return n <= 30 ? "1.9rem" : n <= 55 ? "1.5rem" : "1.25rem";
+}
 const barajar = a => { for (let i = a.length - 1; i > 0; i--) {
   const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -579,7 +760,6 @@ function pintarLearn() {
       cont.appendChild(h);
     }
     cartas.forEach(c => {
-      const p = progreso[c.id];
       const el = document.createElement("div");
       el.className = "item";
       let jpHtml;
@@ -593,7 +773,6 @@ function pintarLearn() {
                  `<div class="ro">${esc(c.lectura || "⚠ falta romaji")}</div>`;
       }
       el.innerHTML =
-        (p && p.fail > 0 ? `<span class="badge">🔥 fallada ${p.fail} ${p.fail === 1 ? "vez" : "veces"}</span>` : "") +
         jpHtml +
         `<div class="es-txt">${esc(c.es)}</div>` +
         (c.nota ? `<div class="nt">${esc(c.nota)}</div>` : "");
@@ -609,40 +788,16 @@ function pintarFlashHome() {
   const sel = seleccion();
   $("#flashBloque").textContent = "Bloque: " + bloqueActual().nombre;
   $("#flashCount").textContent = sel.length;
-  const dif = sel.filter(c => progreso[c.id] && progreso[c.id].fail > 0).length;
-  $("#flashDificiles").textContent = dif > 0
-    ? `${dif} con fallos: saldrán más veces.`
-    : "Aún no hay fallos registrados en esta sesión.";
   $("#empezar").disabled = sel.length === 0;
 }
 
-/* ---------- Construcción del mazo (siempre aleatorio, repite más las falladas) ---------- */
-function construirMazo(lista, ponderar) {
-  let l = [];
-  lista.forEach(c => {
-    let copias = 1;
-    if (ponderar && progreso[c.id]) {
-      const p = progreso[c.id];
-      const score = p.fail - p.ok * 0.5;            // cada acierto compensa medio fallo
-      copias = 1 + Math.max(0, Math.min(3, Math.floor(score)));  // hasta 4 apariciones
-    }
-    for (let i = 0; i < copias; i++) l.push(c);
-  });
-  barajar(l);
-  // evitar que la misma tarjeta salga dos veces seguidas
-  for (let i = 1; i < l.length; i++) {
-    if (l[i].id === l[i - 1].id) {
-      const j = l.findIndex((x, k) => k > i && x.id !== l[i].id);
-      if (j > -1) [l[i], l[j]] = [l[j], l[i]];
-    }
-  }
-  return l;
-}
+/* ---------- Construcción del mazo (siempre aleatorio) ---------- */
+const construirMazo = lista => barajar([...lista]);
 
 /* ---------- Sesión ---------- */
-function empezar(lista, ponderar = true) {
+function empezar(lista) {
   const d = $("#dir").value;
-  deck = construirMazo(lista, ponderar)
+  deck = construirMazo(lista)
     .map(c => ({ ...c, dir: d === "mixto" ? (Math.random() < .5 ? "jp-es" : "es-jp") : d }));
   idx = 0; ok = []; fail = []; animando = false;
   modo = "study"; render(); pintarCarta();
@@ -663,10 +818,13 @@ function pintarCarta() {
       `<div class="row"><span class="big sm">${esc(t)}</span><span class="read">${esc(ro[i] || "")}</span></div>`
     ).join("") + `</div>`;
   } else {
-    ladoJP = `<div class="big">${esc(c.jp)}</div>` +
-             `<div class="read">${esc(c.lectura || "⚠ falta romaji")}</div>`;
+    const f = tamJP(c);
+    ladoJP = `<div class="big" style="font-size:${f}">${esc(c.jp)}</div>` +
+             `<div class="read" style="font-size:${f}">${esc(c.lectura || "⚠ falta romaji")}</div>`;
   }
-  const ladoES = `<div class="big es${esMulti(c) ? " multi" : ""}">${esc(c.es)}</div>`;
+  const ladoES = esMulti(c)
+    ? `<div class="big es multi">${esc(c.es)}</div>`
+    : `<div class="big es" style="font-size:${tamES(c)}">${esc(c.es)}</div>`;
 
   if (c.dir === "jp-es") {
     $("#front").innerHTML = tag + ladoJP;
@@ -706,9 +864,6 @@ function responder(acierto, instantaneo = false) {
   if (animando || modo !== "study") return;
   if (TOUCH && !girada) { avisarGirar(); return; }
   const c = deck[idx];
-  const p = progreso[c.id] || { ok: 0, fail: 0, last: null };
-  acierto ? p.ok++ : p.fail++; p.last = acierto ? 1 : 0;
-  progreso[c.id] = p; guardar();
   (acierto ? ok : fail).push(c);
   idx++;
 
@@ -738,11 +893,18 @@ function responder(acierto, instantaneo = false) {
 }
 
 function terminar() {
-  const unicas = [...new Map(fail.map(c => [c.id, c])).values()];
-  $("#sOk").textContent = ok.length; $("#sFail").textContent = fail.length;
-  $("#failsBox").classList.toggle("hidden", unicas.length === 0);
-  $("#repetirFallos").classList.toggle("hidden", unicas.length === 0);
-  $("#failsList").innerHTML = unicas.map(c => `<li>${esc(plano(c.jp))} (${esc(plano(c.lectura))}) — ${esc(plano(c.es))}</li>`).join("");
+  const unicas = lista => [...new Map(lista.map(c => [c.id, c])).values()];
+  const falladas = unicas(fail), acertadas = unicas(ok);
+  const total = ok.length + fail.length;
+  const fila = c => `<li>${esc(plano(c.jp))} (${esc(plano(c.lectura))}) — ${esc(plano(c.es))}</li>`;
+  $("#sOk").textContent = ok.length;
+  $("#sFail").textContent = fail.length;
+  $("#sPct").textContent = (total ? Math.round(ok.length / total * 100) : 0) + "%";
+  $("#failsBox").classList.toggle("hidden", falladas.length === 0);
+  $("#okBox").classList.toggle("hidden", acertadas.length === 0);
+  $("#repetirFallos").classList.toggle("hidden", falladas.length === 0);
+  $("#failsList").innerHTML = falladas.map(fila).join("");
+  $("#okList").innerHTML = acertadas.map(fila).join("");
   modo = "end"; render();
 }
 
@@ -812,10 +974,7 @@ $("#btnOk").onclick = () => responder(true);
 $("#btnFail").onclick = () => responder(false);
 $("#salir").onclick = () => { animando = false; modo = "flash"; render(); };
 $("#volver").onclick = () => { modo = "flash"; render(); };
-$("#repetirFallos").onclick = () => empezar([...new Map(fail.map(c => [c.id, c])).values()], false);
-$("#resetProgreso").onclick = () => {
-  if (confirm("¿Borrar los fallos guardados?")) { progreso = {}; guardar(); refrescar(); }
-};
+$("#repetirFallos").onclick = () => empezar([...new Map(fail.map(c => [c.id, c])).values()]);
 document.addEventListener("keydown", e => {
   if (modo !== "study") return;
   if (e.code === "Space") { e.preventDefault(); girar(); }

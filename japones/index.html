@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>にほんご Flashcards</title>
 <style>
   :root{
@@ -20,23 +20,26 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;background:var(--bg);color:var(--text);transition:background .25s,color .25s;
-    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;min-height:100dvh;-webkit-text-size-adjust:100%}
   .hidden{display:none!important}
+  html{touch-action:manipulation}
   .jpfont{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
 
   /* ---------- Barra superior ---------- */
   .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;
     background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--border);padding:10px 12px}
+    border-bottom:1px solid var(--border);padding:10px 12px;
+    padding-top:max(10px,env(safe-area-inset-top));padding-left:max(12px,env(safe-area-inset-left));
+    padding-right:max(12px,env(safe-area-inset-right))}
   .iconbtn{background:var(--panel);border:1px solid var(--border);color:var(--text);flex:none;
-    border-radius:12px;width:42px;height:42px;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow)}
+    border-radius:12px;width:44px;height:44px;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow)}
   .topbar h1{font-size:1rem;margin:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .spacer{flex:1}
-  .topsel{width:auto;flex:none;margin:0;padding:8px 8px;font-size:.82rem;border-radius:10px;max-width:150px}
+  .topsel{width:auto;flex:none;margin:0;padding:0 8px;height:44px;font-size:16px;border-radius:12px;max-width:140px}
 
   /* ---------- Menú lateral ---------- */
-  .side{position:fixed;top:0;left:0;bottom:0;width:min(260px,72vw);z-index:30;
-    background:var(--panel);border-right:1px solid var(--border);padding:16px 14px 28px;overflow-y:auto;
+  .side{position:fixed;top:0;left:0;bottom:0;width:min(300px,86vw);z-index:30;
+    background:var(--panel);border-right:1px solid var(--border);padding:16px 14px 28px;padding-bottom:max(28px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;
     transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow)}
   .side.open{transform:none}
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:none}
@@ -45,19 +48,19 @@
   .brand{font-size:1.4rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;
     background-clip:text;color:transparent}
   .brand small{display:block;font-size:.72rem;font-weight:500;color:var(--muted);-webkit-text-fill-color:var(--muted)}
-  .close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
+  .close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;width:44px;height:44px}
   h2{font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:22px 0 9px}
   .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .blocks{display:grid;grid-template-columns:1fr;gap:8px}
   .mode{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:12px;
-    padding:12px 8px;cursor:pointer;font-size:.93rem;transition:.15s;text-align:center}
+    padding:12px 8px;min-height:46px;cursor:pointer;font-size:.95rem;transition:.15s;text-align:center}
   .blocks .mode{text-align:left;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
   .blocks .mode small{opacity:.75;font-size:.78rem}
   .mode.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:700}
 
   /* Árbol de apartados */
   .tree{margin:-2px 0 6px 20px}
-  .tree-tools{font-size:.76rem;color:var(--muted);margin-left:-5px}
+  .tree-tools{font-size:.9rem;color:var(--muted);margin-left:-5px}
   .stem{height:12px;border-left:2px solid var(--border);margin-left:0}
   .branch{position:relative;padding:4px 0 4px 24px}
   .branch::before{content:"";position:absolute;left:0;top:0;bottom:0;border-left:2px solid var(--border)}
@@ -66,24 +69,24 @@
   .conn::after{content:"";position:absolute;right:-3px;top:-6px;border-left:7px solid var(--border);
     border-top:5px solid transparent;border-bottom:5px solid transparent}
   .chip{background:var(--panel2);color:var(--text);border:1px solid var(--border);
-    border-radius:999px;padding:8px 13px;cursor:pointer;font-size:.86rem;transition:.15s;
+    border-radius:999px;padding:8px 14px;min-height:44px;cursor:pointer;font-size:.92rem;transition:.15s;
     display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left}
   .chip.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:600}
   .chip small{opacity:.75;margin-left:6px}
-  .mini{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.76rem;
-    text-decoration:underline;padding:0 5px;text-transform:none;letter-spacing:0}
+  .mini{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;
+    text-decoration:underline;padding:10px 10px;min-height:44px;text-transform:none;letter-spacing:0}
   label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
   select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);
-    border-radius:10px;padding:10px;font-size:.95rem;margin-bottom:10px}
-  .btn{background:var(--grad);color:#fff;border:none;border-radius:14px;padding:15px 20px;
-    font-size:1.02rem;cursor:pointer;width:100%;font-weight:700;box-shadow:var(--shadow);transition:transform .1s}
+    border-radius:12px;padding:12px 10px;font-size:16px;margin-bottom:10px}
+  .btn{background:var(--grad);color:#fff;border:none;border-radius:14px;padding:15px 20px;min-height:52px;
+    font-size:1.05rem;cursor:pointer;width:100%;font-weight:700;box-shadow:var(--shadow);transition:transform .1s}
   .btn:active{transform:scale(.98)}
   .btn:disabled{opacity:.4;cursor:not-allowed}
   .btn.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-weight:500;box-shadow:none}
   .btn.ok{background:var(--ok)} .btn.fail{background:var(--fail)}
 
   /* ---------- Contenido ---------- */
-  .main{padding:18px 16px 40px;max-width:720px;margin:0 auto}
+  .main{padding:18px 16px calc(40px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
   .sub{color:var(--muted);font-size:.95rem;margin:0 0 14px}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
   .actions{display:flex;gap:10px;margin-top:18px}
@@ -108,33 +111,39 @@
   .h-jp .item:not(.visto) .ro{filter:blur(9px);user-select:none}
 
   /* Flashcards */
-  .top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.9rem;margin-bottom:8px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);margin-bottom:10px}
+  .top #posicion{font-weight:700;font-size:1.05rem}
+  .salir{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border-radius:12px;
+    border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:1.05rem;
+    font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:transform .1s}
+  .salir:active{transform:scale(.97)}
   .bar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-bottom:16px}
   .bar>div{height:100%;background:var(--grad);width:0;transition:width .3s;border-radius:99px}
   .scene{perspective:1200px;cursor:pointer}
-  .card{position:relative;width:100%;height:300px;transition:transform .5s;transform-style:preserve-3d}
+  .card{position:relative;width:100%;height:clamp(270px,calc(100vh - 340px),440px);height:clamp(270px,calc(100dvh - 340px),440px);transition:transform .5s;transform-style:preserve-3d}
   .card.flipped{transform:rotateY(180deg)}
   .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
     background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--border);
     border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:22px;text-align:center;box-shadow:var(--shadow)}
+    padding:46px 18px 20px;overflow:hidden;text-align:center;box-shadow:var(--shadow)}
+  .fc{display:flex;flex-direction:column;align-items:center;max-width:100%}
   .face.back{transform:rotateY(180deg)}
   .tag{position:absolute;top:14px;left:16px;font-size:.74rem;color:var(--muted);
     background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
-  .big{font-size:2.1rem;line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
-  .big.es{font-size:1.9rem;font-family:system-ui,sans-serif;font-weight:700}
-  .read{opacity:.85;margin-top:12px;font-size:2.1rem;letter-spacing:.02em}
+  .big{font-size:calc(2.1rem*var(--k,1));line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
+  .big.es{font-size:calc(1.9rem*var(--k,1));font-family:system-ui,sans-serif;font-weight:700;overflow-wrap:break-word}
+  .read{opacity:.85;margin-top:12px;font-size:calc(2.1rem*var(--k,1));letter-spacing:.02em;overflow-wrap:break-word}
   /* Tarjetas con varias líneas (país · idioma · persona) */
   .rows{display:flex;flex-direction:column;gap:10px;align-items:center}
   .row{display:flex;align-items:baseline;justify-content:center;gap:12px;flex-wrap:wrap}
-  .big.sm{font-size:1.6rem}
-  .row .read{margin-top:0;font-size:1.6rem}
-  .big.es.multi{font-size:1.45rem;line-height:1.6;white-space:pre-line}
+  .big.sm{font-size:calc(1.6rem*var(--k,1))}
+  .row .read{margin-top:0;font-size:calc(1.6rem*var(--k,1))}
+  .big.es.multi{font-size:calc(1.45rem*var(--k,1));line-height:1.6;white-space:pre-line}
   .item .rows{align-items:flex-start;gap:2px}
   .item .row{justify-content:flex-start;gap:12px}
   .item .rows .jp,.item .rows .ro{font-size:1.3rem}
   .item .es-txt{white-space:pre-line}
-  .note{color:var(--muted);margin-top:12px;font-size:.9rem;font-style:italic}
+  .note{color:var(--muted);margin-top:12px;font-size:max(.7rem,calc(.9rem*var(--k,1)));font-style:italic}
   .hint{text-align:center;color:var(--muted);font-size:.8rem;margin-top:14px}
   .stats{display:flex;gap:12px;margin:16px 0}
   .stat{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;
@@ -152,7 +161,9 @@
   .hint.warn{color:var(--accent);font-weight:700}
 
   /* Escritorio: menú siempre visible */
+  .listo{margin-top:22px}
   @media (min-width:900px){
+    .listo{display:none}
     :root{--side:290px}
     .side{transform:none;box-shadow:none;width:var(--side)}
     .overlay{display:none!important}
@@ -189,6 +200,8 @@
       <option value="mixto">Mezclado</option>
     </select>
   </div>
+
+  <button class="btn listo" id="listo">Listo</button>
 </aside>
 
 <!-- ============ CONTENIDO ============ -->
@@ -225,7 +238,7 @@
 
   <!-- Estudio -->
   <section id="vStudy" class="hidden">
-    <div class="top"><span id="posicion"></span><button class="mini" id="salir">← Salir</button></div>
+    <div class="top"><span id="posicion"></span><button class="salir" id="salir" aria-label="Salir de la sesión">← Salir</button></div>
     <div class="bar"><div id="barra"></div></div>
     <div class="scene" id="scene">
       <div class="card" id="card">
@@ -366,41 +379,6 @@ const BLOQUES = [
           ["〜の〜", "~ no ~", "〜 de 〜", "の = «de»: primero el dueño y luego la cosa"],
         ]
       },
-      {
-        id: "modelo", nombre: "Frases modelo",
-        cartas: [
-          ["わたしはマリアです", "watashi wa Maria desu", "Yo soy María"],
-          ["かのじょはサラじゃありません", "kanojo wa Sara ja arimasen", "Ella no es Sara"],
-          ["はい、わたしはたなかさんです", "hai, watashi wa Tanaka san desu", "Sí, yo soy Tanaka"],
-          ["いいえ、たなかさんじゃありません", "iie, Tanaka san ja arimasen", "No, no soy Tanaka"],
-          ["イギリスです", "Igirisu desu", "(Soy) de Inglaterra", "Respuesta a どちらからですか"],
-          ["わたしはイギリスじんです", "watashi wa Igirisujin desu", "Yo soy inglés"],
-          ["あなたはタイじんじゃありません", "anata wa Taijin ja arimasen", "Tú no eres tailandés"],
-          ["きょうしです", "kyooshi desu", "(Es) profesor/a", "Respuesta a おしごとは？"],
-          ["これはボールペンです", "kore wa boorupen desu", "Esto es un bolígrafo"],
-          ["それはえんぴつじゃありません", "sore wa enpitsu ja arimasen", "Eso no es un lápiz"],
-          ["はい、それはえんぴつです", "hai, sore wa enpitsu desu", "Sí, eso es un lápiz"],
-          ["いいえ、それはえんぴつじゃありません", "iie, sore wa enpitsu ja arimasen", "No, eso no es un lápiz"],
-          ["いいえ、それはかばんじゃありません。かさです", "iie, sore wa kaban ja arimasen. kasa desu", "No, eso no es un bolso. Es un paraguas"],
-          ["わたしはこうむいんです。かのじょもこうむいんです", "watashi wa koomuin desu. kanojo mo koomuin desu", "Yo soy funcionario/a. Ella también es funcionaria"],
-          ["これはじしょじゃありません。それもじしょじゃありません", "kore wa jisho ja arimasen. sore mo jisho ja arimasen", "Esto no es un diccionario. Eso tampoco es un diccionario"],
-          ["これはかさです。あれもかさですか", "kore wa kasa desu. are mo kasa desu ka", "Esto es un paraguas. ¿Aquello también es un paraguas?"],
-          ["とよたのかいしゃいん", "Toyota no kaishain", "Empleado de Toyota"],
-          ["にほんごのきょうかしょ", "nihongo no kyookasho", "Libro de japonés"],
-          ["かのじょのめがね", "kanojo no megane", "Sus gafas (de ella)"],
-          ["やまもとさんのノートです", "Yamamoto san no nooto desu", "El cuaderno es de Yamamoto"],
-          ["わたしのきょうかしょです", "watashi no kyookasho desu", "Es mi libro de texto"],
-          ["せんせいのシャーペンです", "sensee no shaapen desu", "Es el portaminas del profesor"],
-          ["あなたのじしょです", "anata no jisho desu", "Es tu diccionario"],
-          ["いいえ、えいごのきょうかしょじゃありません。フランスごのきょうかしょです", "iie, eego no kyookasho ja arimasen. Furansugo no kyookasho desu", "No, no es un libro de texto de inglés. Es de francés"],
-          ["かぞくはさんにんです", "kazoku wa sannin desu", "La familia son tres personas"],
-          ["おとうとはじゅっさいです", "otooto wa jussai desu", "Mi hermano pequeño tiene 10 años"],
-          ["はははきょうしです", "haha wa kyooshi desu", "Mi madre es profesora"],
-          ["これはおっとのパソコンです", "kore wa otto no pasokon desu", "Este es el ordenador de mi marido"],
-          ["たなかさんのおくさんはちゅうごくじんです", "Tanaka san no okusan wa Chuugokujin desu", "La mujer de Tanaka es china"],
-          ["かのじょのおねえさんはにほんごのせんせいです", "kanojo no oneesan wa nihongo no sensee desu", "Su hermana mayor es profesora de japonés"],
-        ]
-      },
     ]
   },
 
@@ -427,6 +405,77 @@ const BLOQUES = [
           ["さま", "sama", "Estimado/a Sr. / Sra.", "Para alguien en posición superior, como un cliente · Ej.: まえださま (Maeda sama)"],
           ["くん", "kun", "-ito (afectivo, chicos)", "Con niños y amigos varones · Ej.: ゆうたくん (Yuuta kun)"],
           ["ちゃん", "chan", "-ita (afectivo, chicas)", "Con niñas y amigas · Ej.: はるちゃん (Haru chan, «Harucita»)"],
+        ]
+      },
+      {
+        id: "mia", nombre: "Mi familia",
+        cartas: [
+          ["かぞく", "kazoku", "Familia"],
+          ["そふ", "sofu", "Mi abuelo"],
+          ["そぼ", "sobo", "Mi abuela"],
+          ["ちち", "chichi", "Mi padre"],
+          ["はは", "haha", "Mi madre"],
+          ["あに", "ani", "Mi hermano mayor"],
+          ["あね", "ane", "Mi hermana mayor"],
+          ["おとうと", "otooto", "Mi hermano pequeño"],
+          ["いもうと", "imooto", "Mi hermana pequeña"],
+          ["こども", "kodomo", "Mis hijos / Niño/s"],
+          ["おっと", "otto", "Mi marido"],
+          ["つま", "tsuma", "Mi mujer"],
+        ]
+      },
+      {
+        id: "otros", nombre: "Familia de otros",
+        cartas: [
+          ["おじいさん", "ojiisan", "Abuelo", "Para la familia de otra persona"],
+          ["おばあさん", "obaasan", "Abuela"],
+          ["おとうさん", "otoosan", "Padre"],
+          ["おかあさん", "okaasan", "Madre"],
+          ["おにいさん", "oniisan", "Hermano mayor"],
+          ["おねえさん", "oneesan", "Hermana mayor"],
+          ["おとうとさん", "otootosan", "Hermano pequeño"],
+          ["いもうとさん", "imootosan", "Hermana pequeña"],
+          ["おこさん", "okosan", "El/los hijo/s de otro"],
+          ["ごしゅじん", "goshujin", "Marido"],
+          ["おくさん", "okusan", "Mujer"],
+        ]
+      },
+      {
+        id: "trabajos", nombre: "Trabajos",
+        cartas: [
+          ["きょうし", "kyooshi", "Profesor/a"],
+          ["せんせい", "sensee", "Profesor/a (maestro/a)", "También se usa para dirigirse a un profesor"],
+          ["がくせい", "gakusee", "Estudiante"],
+          ["かいしゃいん", "kaishain", "Empleado/a de una empresa"],
+          ["しゅふ", "shufu", "Amo/a de casa"],
+          ["ぎんこういん", "ginkooin", "Empleado/a de un banco", "Banquero/a"],
+          ["けんきゅうしゃ", "kenkyuusha", "Investigador/a"],
+          ["こうむいん", "koomuin", "Funcionario/a"],
+          ["エンジニア", "enjinia", "Ingeniero/a"],
+        ]
+      },
+      {
+        id: "lugares", nombre: "Lugares de trabajo",
+        cartas: [
+          ["かいしゃ", "kaisha", "Empresa"],
+          ["ぎんこう", "ginkoo", "Banco"],
+          ["がっこう", "gakkoo", "Colegio"],
+          ["だいがく", "daigaku", "Universidad"],
+          ["びょういん", "byooin", "Hospital"],
+        ]
+      },
+      {
+        id: "oficina", nombre: "Material de oficina y clase",
+        cartas: [
+          ["ノート", "nooto", "Cuaderno"],
+          ["えんぴつ", "enpitsu", "Lápiz"],
+          ["シャーペン", "shaapen", "Portaminas"],
+          ["ボールペン", "boorupen", "Bolígrafo"],
+          ["けしゴム", "keshigomu", "Goma de borrar"],
+          ["じしょ", "jisho", "Diccionario"],
+          ["きょうかしょ", "kyookasho", "Libro de texto"],
+          ["パソコン", "pasokon", "Ordenador"],
+          ["シーディー", "shiidii", "CD"],
         ]
       },
       {
@@ -487,89 +536,6 @@ const BLOQUES = [
           ["ブラジル\nブラジルじん", "Burajiru\nBurajirujin",
             "Brasil\nBrasileño/a (persona)", "Su idioma es el portugués: ポルトガルご"],
           ["アラビアご", "Arabiago", "Árabe (idioma)", "Excepción: no lleva el nombre de un país"],
-        ]
-      },
-    ]
-  },
-
-  {
-    id: "trabajo", nombre: "Trabajo y oficina", icono: "💼",
-    subbloques: [
-      {
-        id: "trabajos", nombre: "Trabajos",
-        cartas: [
-          ["きょうし", "kyooshi", "Profesor/a"],
-          ["せんせい", "sensee", "Profesor/a (maestro/a)", "También se usa para dirigirse a un profesor"],
-          ["がくせい", "gakusee", "Estudiante"],
-          ["かいしゃいん", "kaishain", "Empleado/a de una empresa"],
-          ["しゅふ", "shufu", "Amo/a de casa"],
-          ["ぎんこういん", "ginkooin", "Empleado/a de un banco", "Banquero/a"],
-          ["けんきゅうしゃ", "kenkyuusha", "Investigador/a"],
-          ["こうむいん", "koomuin", "Funcionario/a"],
-          ["エンジニア", "enjinia", "Ingeniero/a"],
-        ]
-      },
-      {
-        id: "lugares", nombre: "Lugares de trabajo",
-        cartas: [
-          ["かいしゃ", "kaisha", "Empresa"],
-          ["ぎんこう", "ginkoo", "Banco"],
-          ["がっこう", "gakkoo", "Colegio"],
-          ["だいがく", "daigaku", "Universidad"],
-          ["びょういん", "byooin", "Hospital"],
-        ]
-      },
-      {
-        id: "oficina", nombre: "Material de oficina y clase",
-        cartas: [
-          ["ノート", "nooto", "Cuaderno"],
-          ["えんぴつ", "enpitsu", "Lápiz"],
-          ["シャーペン", "shaapen", "Portaminas"],
-          ["ボールペン", "boorupen", "Bolígrafo"],
-          ["けしゴム", "keshigomu", "Goma de borrar"],
-          ["じしょ", "jisho", "Diccionario"],
-          ["きょうかしょ", "kyookasho", "Libro de texto"],
-          ["パソコン", "pasokon", "Ordenador"],
-          ["シーディー", "shiidii", "CD"],
-        ]
-      },
-    ]
-  },
-
-  {
-    id: "familia", nombre: "Familia", icono: "👨‍👩‍👧",
-    subbloques: [
-      {
-        id: "mia", nombre: "Mi familia",
-        cartas: [
-          ["かぞく", "kazoku", "Familia"],
-          ["そふ", "sofu", "Mi abuelo"],
-          ["そぼ", "sobo", "Mi abuela"],
-          ["ちち", "chichi", "Mi padre"],
-          ["はは", "haha", "Mi madre"],
-          ["あに", "ani", "Mi hermano mayor"],
-          ["あね", "ane", "Mi hermana mayor"],
-          ["おとうと", "otooto", "Mi hermano pequeño"],
-          ["いもうと", "imooto", "Mi hermana pequeña"],
-          ["こども", "kodomo", "Mis hijos / Niño/s"],
-          ["おっと", "otto", "Mi marido"],
-          ["つま", "tsuma", "Mi mujer"],
-        ]
-      },
-      {
-        id: "otros", nombre: "Familia de otros",
-        cartas: [
-          ["おじいさん", "ojiisan", "Abuelo", "Para la familia de otra persona"],
-          ["おばあさん", "obaasan", "Abuela"],
-          ["おとうさん", "otoosan", "Padre"],
-          ["おかあさん", "okaasan", "Madre"],
-          ["おにいさん", "oniisan", "Hermano mayor"],
-          ["おねえさん", "oneesan", "Hermana mayor"],
-          ["おとうとさん", "otootosan", "Hermano pequeño"],
-          ["いもうとさん", "imootosan", "Hermana pequeña"],
-          ["おこさん", "okosan", "El/los hijo/s de otro"],
-          ["ごしゅじん", "goshujin", "Marido"],
-          ["おくさん", "okusan", "Mujer"],
         ]
       },
     ]
@@ -666,6 +632,7 @@ const abrirMenu = () => { $("#side").classList.add("open"); $("#overlay").classL
 const cerrarMenu = () => { $("#side").classList.remove("open"); $("#overlay").classList.remove("show"); };
 $("#abrir").onclick = () => menuAbierto() ? cerrarMenu() : abrirMenu();
 $("#cerrar").onclick = cerrarMenu;
+$("#listo").onclick = cerrarMenu;
 $("#overlay").onclick = cerrarMenu;
 
 function pintarSidebar() {
@@ -819,22 +786,43 @@ function pintarCarta() {
     ).join("") + `</div>`;
   } else {
     const f = tamJP(c);
-    ladoJP = `<div class="big" style="font-size:${f}">${esc(c.jp)}</div>` +
-             `<div class="read" style="font-size:${f}">${esc(c.lectura || "⚠ falta romaji")}</div>`;
+    ladoJP = `<div class="big" style="font-size:calc(${f}*var(--k,1))">${esc(c.jp)}</div>` +
+             `<div class="read" style="font-size:calc(${f}*var(--k,1))">${esc(c.lectura || "⚠ falta romaji")}</div>`;
   }
   const ladoES = esMulti(c)
     ? `<div class="big es multi">${esc(c.es)}</div>`
-    : `<div class="big es" style="font-size:${tamES(c)}">${esc(c.es)}</div>`;
+    : `<div class="big es" style="font-size:calc(${tamES(c)}*var(--k,1))">${esc(c.es)}</div>`;
 
+  const cara = cuerpo => tag + `<div class="fc">${cuerpo}</div>`;
   if (c.dir === "jp-es") {
-    $("#front").innerHTML = tag + ladoJP;
-    $("#back").innerHTML  = tag + ladoES + nt;
+    $("#front").innerHTML = cara(ladoJP);
+    $("#back").innerHTML  = cara(ladoES + nt);
   } else {
-    $("#front").innerHTML = tag + ladoES;
-    $("#back").innerHTML  = tag + ladoJP + nt;
+    $("#front").innerHTML = cara(ladoES);
+    $("#back").innerHTML  = cara(ladoJP + nt);
   }
+  ajustarCarta();
   actualizarBotones();
 }
+
+/* Reduce el texto de cada cara hasta que quepa entera (según el tamaño de pantalla) */
+function ajustarCarta() {
+  ["#front", "#back"].forEach(sel => {
+    const face = $(sel), fc = face.querySelector(".fc");
+    if (!fc) return;
+    face.style.setProperty("--k", 1);
+    const cs = getComputedStyle(face);
+    const hmax = face.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const wmax = face.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    let k = 1;
+    while ((fc.offsetHeight > hmax || fc.scrollWidth > wmax + 1) && k > 0.4) {
+      k = Math.round((k - 0.05) * 100) / 100;
+      face.style.setProperty("--k", k);
+    }
+  });
+}
+addEventListener("resize", () => { if (modo === "study") ajustarCarta(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (modo === "study") ajustarCarta(); });
 
 const TOUCH = matchMedia("(pointer: coarse)").matches;   // true en móvil/tablet
 if (TOUCH) $("#hint").textContent = "Toca para girar · Desliza → la sabía · ← fallé";

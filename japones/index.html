@@ -35,12 +35,32 @@
     border-radius:12px;width:44px;height:44px;font-size:1.2rem;cursor:pointer;box-shadow:var(--shadow)}
   .topbar h1{font-size:1rem;margin:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .spacer{flex:1}
-  .topsel{width:auto;flex:none;margin:0;padding:0 8px;height:44px;font-size:16px;border-radius:12px;max-width:140px}
+  /* Selector de ocultar (modo aprender) */
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 14px}
+  .seg button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:12px;
+    min-height:46px;padding:6px 6px;font-size:.88rem;line-height:1.2;cursor:pointer}
+  .seg button.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:700}
+  /* Recursos extra */
+  .main.ancho{max-width:1100px}
+  .recurso{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 16px;min-height:56px;
+    margin-bottom:10px;color:var(--text);font-size:1.02rem;font-weight:600;cursor:pointer;box-shadow:var(--shadow)}
+  .recurso small{color:var(--muted);font-weight:500}
+  .visor{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;
+    height:calc(100vh - 230px);height:calc(100dvh - 230px);min-height:380px}
+  .visor iframe{width:100%;height:100%;border:0;display:block}
+  .hint a{color:var(--accent);font-weight:700}
+  #printArea{display:none}
 
   /* ---------- Menú lateral ---------- */
   .side{position:fixed;top:0;left:0;bottom:0;width:min(300px,86vw);z-index:30;
-    background:var(--panel);border-right:1px solid var(--border);padding:16px 14px 28px;padding-bottom:max(28px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;
+    background:var(--panel);border-right:1px solid var(--border);padding:0;display:flex;flex-direction:column;overflow:hidden;
     transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow)}
+  .side-fixed{flex:none;padding:14px 14px 12px;padding-top:max(14px,env(safe-area-inset-top));
+    border-bottom:1px solid var(--border);background:var(--panel)}
+  .side-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+    padding:0 14px max(28px,env(safe-area-inset-bottom))}
+  .side-fixed .modes{margin-top:12px}
   .side.open{transform:none}
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:none}
   .overlay.show{display:block}
@@ -53,7 +73,7 @@
   .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .blocks{display:grid;grid-template-columns:1fr;gap:8px}
   .mode{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:12px;
-    padding:12px 8px;min-height:46px;cursor:pointer;font-size:.95rem;transition:.15s;text-align:center}
+    padding:10px 6px;min-height:46px;cursor:pointer;font-size:.9rem;line-height:1.2;transition:.15s;text-align:center}
   .blocks .mode{text-align:left;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
   .blocks .mode small{opacity:.75;font-size:.78rem}
   .mode.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:700}
@@ -112,7 +132,7 @@
 
   /* Flashcards */
   .top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);margin-bottom:10px}
-  .top #posicion{font-weight:700;font-size:1.05rem}
+  .top #posicion,.top #resTitulo{font-weight:700;font-size:1.05rem}
   .salir{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border-radius:12px;
     border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:1.05rem;
     font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:transform .1s}
@@ -170,6 +190,31 @@
     .burger,.close{display:none}
     body{padding-left:var(--side)}
   }
+
+  /* ---------- Impresión (PDF) ---------- */
+  @media print{
+    @page{size:A4;margin:11mm}
+    html,body{background:#fff!important;color:#000!important}
+    body{padding-left:0!important;min-height:0!important;font-size:9pt}
+    body>*:not(#printArea){display:none!important}
+    #printArea{display:block!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #printArea h1{font-size:17pt;margin:0 0 2mm}
+    #printArea .pmeta{margin:0 0 5mm;color:#555;font-size:9pt}
+    #printArea h2{font-size:14pt;margin:0 0 3mm;padding-bottom:1mm;border-bottom:2px solid #d94b5b;
+      color:#000;text-transform:none;letter-spacing:0}
+    #printArea section.nueva{break-before:page}
+    #printArea table{width:100%;border-collapse:collapse;margin:0 0 4mm}
+    #printArea table.corta{break-inside:avoid}
+    #printArea caption{caption-side:top;text-align:left;font-weight:700;font-size:10.5pt;padding:1mm 0 1mm;
+      break-after:avoid}
+    #printArea th{background:#f1e4e6;text-align:left;font-size:8.5pt;padding:1mm 2mm;border:1px solid #bbb}
+    #printArea td{padding:.5mm 2mm;border:1px solid #ccc;vertical-align:top;line-height:1.25}
+    #printArea tr{break-inside:avoid}
+    #printArea td.j{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif;font-size:10pt;width:30%}
+    #printArea td.r{width:30%}
+    #printArea td.e{width:40%}
+    #printArea .nt{display:block;color:#555;font-size:8pt;font-style:italic}
+  }
 </style>
 </head>
 <body>
@@ -177,31 +222,36 @@
 <!-- ============ MENÚ LATERAL ============ -->
 <div class="overlay" id="overlay"></div>
 <aside class="side" id="side">
-  <div class="side-head">
-    <div class="brand">にほんご<small>Flashcards de clase</small></div>
-    <button class="close" id="cerrar" aria-label="Cerrar menú">✕</button>
+  <div class="side-fixed">
+    <div class="side-head">
+      <div class="brand">にほんご<small>Flashcards de clase</small></div>
+      <button class="close" id="cerrar" aria-label="Cerrar menú">✕</button>
+    </div>
+    <div class="modes">
+      <button class="mode" id="mLearn">📖 Aprender</button>
+      <button class="mode" id="mFlash">🃏 Flashcards</button>
+      <button class="mode" id="mRes">🔗 Recursos extra</button>
+      <button class="mode" id="mPrint">🖨 Imprimir recursos</button>
+    </div>
   </div>
 
-  <h2>Modo</h2>
-  <div class="modes">
-    <button class="mode" id="mLearn">📖 Aprender</button>
-    <button class="mode" id="mFlash">🃏 Flashcards</button>
+  <div class="side-scroll">
+    <div id="sideBody">
+      <h2>Bloque</h2>
+      <div class="blocks" id="listaBloques"></div>
+
+      <div id="optsFlash">
+        <h2>Flashcards</h2>
+        <label for="dir">Dirección</label>
+        <select id="dir">
+          <option value="es-jp" selected>Español → Japonés</option>
+          <option value="jp-es">Japonés → Español</option>
+          <option value="mixto">Mezclado</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn listo" id="listo">Listo</button>
   </div>
-
-  <h2>Bloque</h2>
-  <div class="blocks" id="listaBloques"></div>
-
-  <div id="optsFlash">
-    <h2>Flashcards</h2>
-    <label for="dir">Dirección</label>
-    <select id="dir">
-      <option value="es-jp" selected>Español → Japonés</option>
-      <option value="jp-es">Japonés → Español</option>
-      <option value="mixto">Mezclado</option>
-    </select>
-  </div>
-
-  <button class="btn listo" id="listo">Listo</button>
 </aside>
 
 <!-- ============ CONTENIDO ============ -->
@@ -209,11 +259,6 @@
   <button class="iconbtn burger" id="abrir" aria-label="Abrir o cerrar opciones">⋮</button>
   <h1 id="titulo">Flashcards</h1>
   <span class="spacer"></span>
-  <select class="topsel" id="ocultar" aria-label="Ocultar texto">
-    <option value="none">👁 Sin ocultar</option>
-    <option value="es">Ocultar español</option>
-    <option value="jp">Ocultar japonés</option>
-  </select>
   <button class="iconbtn" id="temaBtn" aria-label="Cambiar modo claro/oscuro" title="Modo claro / oscuro">🌙</button>
 </header>
 
@@ -221,9 +266,27 @@
 
   <!-- Modo aprender -->
   <section id="vLearn">
+    <div class="seg" id="ocultarSeg" role="group" aria-label="Ocultar texto">
+      <button data-v="none" class="on">👁 Sin ocultar</button>
+      <button data-v="es">Ocultar español</button>
+      <button data-v="jp">Ocultar japonés</button>
+    </div>
     <p class="sub" id="learnCount"></p>
     <div id="learnList"></div>
     <div class="actions"><button class="btn" id="irRepasar">Repasar esto con flashcards →</button></div>
+  </section>
+
+  <!-- Recursos extra -->
+  <section id="vRes" class="hidden">
+    <div id="resLista">
+      <p class="sub">Elige un recurso: se abre aquí dentro, sin salir de la app.</p>
+      <div id="resBtns"></div>
+    </div>
+    <div id="resVisor" class="hidden">
+      <div class="top"><span id="resTitulo"></span><button class="salir" id="resSalir" aria-label="Salir del recurso">← Salir</button></div>
+      <div class="visor"><iframe id="resFrame" title="Recurso" allow="fullscreen" referrerpolicy="no-referrer"></iframe></div>
+      <p class="hint">¿No se ve nada? Esa web no permite mostrarse dentro de otra. <a id="resAbrir" href="#" target="_blank" rel="noopener">Abrir en pestaña nueva ↗</a></p>
+    </div>
   </section>
 
   <!-- Inicio flashcards -->
@@ -276,6 +339,9 @@
   </section>
 
 </main>
+
+<!-- Contenido para imprimir (se rellena al pulsar «Imprimir recursos») -->
+<div id="printArea"></div>
 
 <script>
 /* ==========================================================================
@@ -591,14 +657,28 @@ $("#temaBtn").onclick = () =>
 const GIRO_MS = 520;
 
 /* ---------- Datos aplanados ---------- */
+/* Primera letra en mayúscula (cada línea), tanto en romaji como en español */
+const cap = t => t == null ? t : String(t).split("\n")
+  .map(l => l.replace(/^([^\p{L}\p{N}]*)(\p{L})/u, (m, a, b) => a + b.toLocaleUpperCase("es"))).join("\n");
+
 const todas = BLOQUES.flatMap(b => b.subbloques.flatMap(s => s.cartas.map(([jp, lectura, es, nota]) => ({
   id: b.id + "|" + s.id + "|" + jp,
   bloque: b.id, sub: s.id, subNombre: s.nombre, bloqueNombre: b.nombre,
-  jp, lectura, es, nota
+  jp, lectura: cap(lectura), es: cap(es), nota: cap(nota)
 }))));
 
+/* ---------- Recursos extra (se ven dentro de la app) ---------- */
+const RECURSOS = [
+  { nombre: "Kahoot Hiragana 1", url: "https://create.kahoot.it/share/hiragana-1-japones/8e845123-87b8-4ba7-9f6e-1152d19b2946" },
+  { nombre: "Kahoot Hiragana 2", url: "https://create.kahoot.it/share/hiragana-2-japones/8d588090-9b20-4dd2-8fbb-331493745fa7" },
+  { nombre: "Kahoot Hiragana 3", url: "https://create.kahoot.it/share/japones-hiragana-3/8de61ce3-0ab4-44d7-bbd1-c35319097b4f" },
+  { nombre: "Kahoot Hiragana 4", url: "https://create.kahoot.it/share/japones-hiragana-4/6d0f5d33-94b0-4011-953f-0d3a3e1226b7" },
+  { nombre: "Repaso Diptongos", url: "https://wordwall.net/es/resource/61604066", embed: "https://wordwall.net/es/embed/61604066" },
+  // ← añade más recursos aquí: { nombre: "…", url: "…" }
+];
+
 /* Selección: un solo bloque a la vez + los subbloques marcados dentro de él */
-const cfg = { bloque: BLOQUES[0].id, subs: {} };
+const cfg = { bloque: BLOQUES[0].id, abierto: true, subs: {} };
 BLOQUES.forEach(b => cfg.subs[b.id] = new Set(b.subbloques.map(s => s.id)));
 
 const bloqueActual = () => BLOQUES.find(b => b.id === cfg.bloque);
@@ -641,13 +721,20 @@ function pintarSidebar() {
   BLOQUES.forEach(b => {
     const n = todas.filter(c => c.bloque === b.id).length;
     const btn = document.createElement("button");
-    btn.className = "mode" + (b.id === cfg.bloque ? " on" : "");
-    btn.innerHTML = `<span>${b.icono || ""} ${esc(b.nombre)}</span><small>${n}</small>`;
-    btn.onclick = () => { cfg.bloque = b.id; refrescar(); };
+    const activo = b.id === cfg.bloque, desplegable = b.subbloques.length > 1;
+    btn.className = "mode" + (activo ? " on" : "");
+    if (desplegable) btn.setAttribute("aria-expanded", String(activo && cfg.abierto));
+    btn.innerHTML = `<span>${b.icono || ""} ${esc(b.nombre)}</span><small>${n}${desplegable ? (activo && cfg.abierto ? " ▾" : " ▸") : ""}</small>`;
+    btn.onclick = () => {
+      // Mismo bloque: abre/cierra sus apartados. Otro bloque: lo elige y lo abre.
+      if (b.id === cfg.bloque) cfg.abierto = !cfg.abierto;
+      else { cfg.bloque = b.id; cfg.abierto = true; }
+      refrescar();
+    };
     lb.appendChild(btn);
 
-    // Árbol: del bloque activo salen sus apartados
-    if (b.id === cfg.bloque && b.subbloques.length > 1) {
+    // Árbol: del bloque activo (y abierto) salen sus apartados
+    if (activo && cfg.abierto && desplegable) {
       const tree = document.createElement("div");
       tree.className = "tree";
       tree.innerHTML =
@@ -685,22 +772,24 @@ function pintarSidebar() {
   });
 
   $("#mLearn").classList.toggle("on", modo === "learn");
-  $("#mFlash").classList.toggle("on", modo !== "learn");
+  $("#mRes").classList.toggle("on", modo === "res");
+  $("#mFlash").classList.toggle("on", modo !== "learn" && modo !== "res");
+  $("#sideBody").classList.toggle("hidden", modo === "res");
   $("#optsFlash").classList.toggle("hidden", modo === "learn");
 }
 
 /* ---------- Vistas ---------- */
 function render() {
-  const vistas = { learn: "vLearn", flash: "vFlash", study: "vStudy", end: "vEnd" };
+  const vistas = { learn: "vLearn", flash: "vFlash", study: "vStudy", end: "vEnd", res: "vRes" };
   Object.entries(vistas).forEach(([m, id]) => $("#" + id).classList.toggle("hidden", m !== modo));
-  $("#ocultar").classList.toggle("hidden", modo !== "learn");
+  if (modo !== "res") cerrarRecurso();
   refrescar();
 }
 
 function refrescar() {
   pintarSidebar();
   $("#titulo").textContent = modo === "learn" ? "Aprender · " + bloqueActual().nombre
-    : modo === "end" ? "Resultado" : "Flashcards · " + bloqueActual().nombre;
+    : modo === "end" ? "Resultado" : modo === "res" ? "Recursos extra" : "Flashcards · " + bloqueActual().nombre;
   if (modo === "learn") pintarLearn();
   if (modo === "flash") pintarFlashHome();
 }
@@ -712,8 +801,8 @@ function pintarLearn() {
   $("#learnCount").textContent = sel.length + (sel.length === 1 ? " tarjeta" : " tarjetas");
   $("#irRepasar").disabled = sel.length === 0;
   const cont = $("#learnList");
-  cont.classList.toggle("h-es", $("#ocultar").value === "es");
-  cont.classList.toggle("h-jp", $("#ocultar").value === "jp");
+  cont.classList.toggle("h-es", ocultarV === "es");
+  cont.classList.toggle("h-jp", ocultarV === "jp");
   cont.innerHTML = "";
   if (!sel.length) { cont.innerHTML = `<p class="sub">No hay nada seleccionado. Abre el menú ⋮ y elige algún apartado.</p>`; return; }
 
@@ -748,7 +837,60 @@ function pintarLearn() {
     });
   });
 }
-$("#ocultar").onchange = pintarLearn;
+let ocultarV = "none";
+document.querySelectorAll("#ocultarSeg button").forEach(btn => btn.onclick = () => {
+  ocultarV = btn.dataset.v;
+  document.querySelectorAll("#ocultarSeg button").forEach(x => x.classList.toggle("on", x === btn));
+  pintarLearn();
+});
+
+/* ---------- Recursos extra ---------- */
+RECURSOS.forEach(r => {
+  const b = document.createElement("button");
+  b.className = "recurso";
+  b.innerHTML = `<span>${esc(r.nombre)}</span><small>Ver ›</small>`;
+  b.onclick = () => abrirRecurso(r);
+  $("#resBtns").appendChild(b);
+});
+function abrirRecurso(r) {
+  $("#resTitulo").textContent = r.nombre;
+  $("#resAbrir").href = r.url;
+  $("#resFrame").src = r.embed || r.url;
+  $("#resLista").classList.add("hidden");
+  $("#resVisor").classList.remove("hidden");
+  document.querySelector(".main").classList.add("ancho");
+  scrollTo(0, 0);
+}
+function cerrarRecurso() {
+  $("#resFrame").src = "about:blank";
+  $("#resVisor").classList.add("hidden");
+  $("#resLista").classList.remove("hidden");
+  document.querySelector(".main").classList.remove("ancho");
+}
+$("#resSalir").onclick = cerrarRecurso;
+
+/* ---------- Imprimir recursos: genera tablas con TODO el contenido y abre la impresión (Guardar como PDF) ---------- */
+function imprimir() {
+  const celdas = t => lineas(t).map(esc).join("<br>");
+  const hoy = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+  let h = `<h1>Japonés · material de estudio</h1><p class="pmeta">A1 (N5.1) · Hiragana, katakana y romaji · ${esc(hoy)}</p>`;
+  BLOQUES.forEach((b, i) => {
+    h += `<section class="${i ? "nueva" : ""}"><h2>${esc(b.nombre)}</h2>`;
+    b.subbloques.forEach(s => {
+      const cartas = todas.filter(c => c.bloque === b.id && c.sub === s.id);
+      h += `<table class="${cartas.length <= 12 ? "corta" : ""}"><caption>${esc(s.nombre)} (${cartas.length})</caption>` +
+           `<thead><tr><th>Japonés</th><th>Romaji</th><th>Español</th></tr></thead><tbody>` +
+           cartas.map(c => `<tr><td class="j">${celdas(c.jp)}</td><td class="r">${celdas(c.lectura)}</td>` +
+             `<td class="e">${celdas(c.es)}${c.nota ? `<span class="nt">${esc(c.nota)}</span>` : ""}</td></tr>`).join("") +
+           `</tbody></table>`;
+    });
+    h += `</section>`;
+  });
+  $("#printArea").innerHTML = h;
+  cerrarMenu();
+  setTimeout(() => print(), 50);
+}
+addEventListener("afterprint", () => { $("#printArea").innerHTML = ""; });
 
 /* ---------- Inicio de flashcards ---------- */
 function pintarFlashHome() {
@@ -899,6 +1041,8 @@ function terminar() {
 /* ---------- Eventos ---------- */
 $("#mLearn").onclick = () => { modo = "learn"; cerrarMenu(); render(); };
 $("#mFlash").onclick = () => { modo = "flash"; cerrarMenu(); render(); };
+$("#mRes").onclick = () => { modo = "res"; cerrarMenu(); render(); };
+$("#mPrint").onclick = imprimir;
 $("#irRepasar").onclick = () => { modo = "flash"; render(); };
 $("#empezar").onclick = () => { cerrarMenu(); empezar(seleccion()); };
 
@@ -964,6 +1108,7 @@ $("#salir").onclick = () => { animando = false; modo = "flash"; render(); };
 $("#volver").onclick = () => { modo = "flash"; render(); };
 $("#repetirFallos").onclick = () => empezar([...new Map(fail.map(c => [c.id, c])).values()]);
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && modo === "res" && !$("#resVisor").classList.contains("hidden")) return cerrarRecurso();
   if (modo !== "study") return;
   if (e.code === "Space") { e.preventDefault(); girar(); }
   if (e.key === "1" || e.key === "ArrowLeft") responder(false);

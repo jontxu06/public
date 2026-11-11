@@ -50,6 +50,15 @@
     height:calc(100vh - 230px);height:calc(100dvh - 230px);min-height:380px}
   .visor iframe{width:100%;height:100%;border:0;display:block}
   .hint a{color:var(--accent);font-weight:700}
+  /* Botón de dirección (un clic = media vuelta) */
+  .dirwrap{perspective:600px;margin-top:8px}
+  .dirbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;
+    background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:12px;
+    font-size:.95rem;font-weight:600;cursor:pointer;padding:8px 10px}
+  .dirico{font-size:1.2rem;color:var(--accent)}
+  .dirbtn.giro{animation:media .3s ease-in-out}
+  @keyframes media{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+  @media (prefers-reduced-motion:reduce){.dirbtn.giro{animation:none}}
   #printArea{display:none}
 
   /* ---------- Menú lateral ---------- */
@@ -93,6 +102,9 @@
     display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left}
   .chip.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:600}
   .chip small{opacity:.75;margin-left:6px}
+  .sro{display:block;font-style:normal;font-size:.72rem;font-weight:400;opacity:.8;line-height:1.2}
+  .mode .sro{display:inline;font-size:.8rem}
+  .theme-title span:first-child{min-width:0;padding-right:8px}
   .mini{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;
     text-decoration:underline;padding:10px 10px;min-height:44px;text-transform:none;letter-spacing:0}
   label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
@@ -148,7 +160,7 @@
     padding:46px 18px 20px;overflow:hidden;text-align:center;box-shadow:var(--shadow)}
   .fc{display:flex;flex-direction:column;align-items:center;max-width:100%}
   .face.back{transform:rotateY(180deg)}
-  .tag{position:absolute;top:14px;left:16px;font-size:.74rem;color:var(--muted);
+  .tag{position:absolute;top:14px;left:16px;max-width:calc(100% - 32px);font-size:.74rem;color:var(--muted);
     background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
   .big{font-size:calc(2.1rem*var(--k,1));line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
   .big.es{font-size:calc(1.9rem*var(--k,1));font-family:system-ui,sans-serif;font-weight:700;overflow-wrap:break-word}
@@ -233,22 +245,17 @@
       <button class="mode" id="mRes">🔗 Recursos extra</button>
       <button class="mode" id="mPrint">🖨 Imprimir recursos</button>
     </div>
+    <div class="dirwrap">
+      <button class="dirbtn" id="dirBtn" aria-live="polite" title="Tocar para dar la vuelta">
+        <span class="dirico" aria-hidden="true">⇄</span><span id="dirTxt">Español → Japonés</span>
+      </button>
+    </div>
   </div>
 
   <div class="side-scroll">
     <div id="sideBody">
       <h2>Bloque</h2>
       <div class="blocks" id="listaBloques"></div>
-
-      <div id="optsFlash">
-        <h2>Flashcards</h2>
-        <label for="dir">Dirección</label>
-        <select id="dir">
-          <option value="es-jp" selected>Español → Japonés</option>
-          <option value="jp-es">Japonés → Español</option>
-          <option value="mixto">Mezclado</option>
-        </select>
-      </div>
     </div>
     <button class="btn listo" id="listo">Listo</button>
   </div>
@@ -371,8 +378,9 @@ const BLOQUES = [
           ["こんばんは", "konbanwa", "Buenas noches (al encontrarse)"],
           ["おやすみなさい", "oyasuminasai", "Descansa / Buenas noches (al irse a dormir)"],
           ["さようなら", "sayoonara", "Adiós"],
-          ["はじめまして", "hajimemashite", "Encantado/a de conocerte", "Se dice al conocer a alguien por primera vez"],
-          ["どうぞよろしくおねがいします", "doozo yoroshiku onegaishimasu", "Encantado/a / Un placer", "Se dice al presentarse"],
+          ["はじめまして", "hajimemashite", "Buenas, me presento", "Se dice al conocer a alguien por primera vez"],
+          ["どうぞよろしくおねがいします", "doozo yoroshiku onegaishimasu", "Encantado/a de conocerte", "Se dice al presentarse"],
+          ["もういちどおねがいします", "moo ichido onegaishimasu", "Otra vez, por favor"],
           ["ありがとうございます", "arigatoo gozaimasu", "Gracias"],
           ["どういたしまして", "doo itashimashite", "De nada (respuesta a gracias)"],
           ["いえいえ", "ie ie", "De nada (informal)"],
@@ -400,7 +408,8 @@ const BLOQUES = [
           ["はい、すこしできます", "hai, sukoshi dekimasu", "Sí, puedo hablarlo un poquito"],
           ["べんきょうちゅうです", "benkyoochuu desu", "Lo estoy estudiando"],
           ["いいえ、できません", "iie, dekimasen", "No puedo / No sé"],
-          ["そうですね", "soo desu ne", "Ah, ya veo"],
+          ["そうですね", "soo desu ne", "Ah, ya veo", "También: estás de acuerdo con alguien"],
+          ["はい、そうですね", "hai, soo desu ne", "Sí, así es"],
           ["そうですか", "soo desu ka", "¿Ah, sí?"],
           ["わかりません", "wakarimasen", "No lo sé"],
           ["ちょっとまってください", "chotto matte kudasai", "Espera un poco, por favor"],
@@ -408,7 +417,7 @@ const BLOQUES = [
         ]
       },
       {
-        id: "preguntas", nombre: "Preguntas",
+        id: "preguntas", nombre: "Preguntas", jp: "しつもん", ro: "Shitsumon",
         cartas: [
           ["げんきですか", "genki desu ka", "¿Estás bien?"],
           ["おなまえは？", "onamae wa?", "¿Cómo te llamas?"],
@@ -421,6 +430,9 @@ const BLOQUES = [
           ["すうじは？", "suuji wa?", "¿Qué número es?"],
           ["おしごとは？", "oshigoto wa?", "¿Cuál es su trabajo?"],
           ["ばしょは？", "basho wa?", "¿Cuál es el lugar?"],
+          ["だれ", "dare", "¿Quién?"],
+          ["だれの", "dare no", "¿De quién?"],
+          ["なにご", "nanigo", "¿Qué idioma?"],
           ["だれですか", "dare desu ka", "¿Quién es?"],
           ["だれのノートですか", "dare no nooto desu ka", "¿De quién es el cuaderno?", "だれの = ¿de quién?"],
           ["あなたはたなかさんですか", "anata wa Tanaka san desu ka", "¿Eres Tanaka?"],
@@ -443,13 +455,15 @@ const BLOQUES = [
           ["いいえ、〜じゃありません", "iie, ~ ja arimasen", "No, no es 〜"],
           ["〜も〜です", "~ mo ~ desu", "〜 también es 〜", "も = «también» (o «tampoco» con negativo); sustituye a は"],
           ["〜の〜", "~ no ~", "〜 de 〜", "の = «de»: primero el dueño y luego la cosa"],
+          ["はじめまして。わたしは＿＿です。どうぞよろしくおねがいします。", "hajimemashite. watashi wa ___ desu. doozo yoroshiku onegaishimasu",
+            "Presentación: Buenas, me presento. Yo soy ___. Encantado/a de conocerte"],
         ]
       },
     ]
   },
 
   {
-    id: "vocabulario", nombre: "Vocabulario", icono: "📚",
+    id: "vocabulario", nombre: "Vocabulario", icono: "📚", jp: "ごい", ro: "Goi",
     subbloques: [
       {
         id: "pronombres", nombre: "Pronombres",
@@ -465,6 +479,14 @@ const BLOQUES = [
         ]
       },
       {
+        id: "demostrativos", nombre: "Esto, eso, aquello",
+        cartas: [
+          ["これ", "kore", "Esto", "Se usa así: これ / それ / あれ + は + ___"],
+          ["それ", "sore", "Eso"],
+          ["あれ", "are", "Aquello"],
+        ]
+      },
+      {
         id: "tratamientos", nombre: "Tratamientos",
         cartas: [
           ["さん", "san", "Sr. / Sra.", "Con desconocidos o en entornos formales · Ej.: たなかさん (Tanaka san)"],
@@ -474,7 +496,7 @@ const BLOQUES = [
         ]
       },
       {
-        id: "mia", nombre: "Mi familia",
+        id: "mia", nombre: "Mi familia", jp: "わたしのかぞく", ro: "Watashi no kazoku",
         cartas: [
           ["かぞく", "kazoku", "Familia"],
           ["そふ", "sofu", "Mi abuelo"],
@@ -491,7 +513,7 @@ const BLOQUES = [
         ]
       },
       {
-        id: "otros", nombre: "Familia de otros",
+        id: "otros", nombre: "Familia de otros", jp: "ほかのひとのかぞく", ro: "Hoka no hito no kazoku",
         cartas: [
           ["おじいさん", "ojiisan", "Abuelo", "Para la familia de otra persona"],
           ["おばあさん", "obaasan", "Abuela"],
@@ -507,10 +529,10 @@ const BLOQUES = [
         ]
       },
       {
-        id: "trabajos", nombre: "Trabajos",
+        id: "trabajos", nombre: "Trabajos", jp: "しごと", ro: "Shigoto",
         cartas: [
           ["きょうし", "kyooshi", "Profesor/a"],
-          ["せんせい", "sensee", "Profesor/a (maestro/a)", "También se usa para dirigirse a un profesor"],
+          ["せんせい", "sensee", "Persona que domina una materia concreta (también profesor/a, maestro/a)", "También se usa para dirigirse a un profesor"],
           ["がくせい", "gakusee", "Estudiante"],
           ["かいしゃいん", "kaishain", "Empleado/a de una empresa"],
           ["しゅふ", "shufu", "Amo/a de casa"],
@@ -521,7 +543,7 @@ const BLOQUES = [
         ]
       },
       {
-        id: "lugares", nombre: "Lugares de trabajo",
+        id: "lugares", nombre: "Lugares de trabajo", jp: "ばしょ", ro: "Basho",
         cartas: [
           ["かいしゃ", "kaisha", "Empresa"],
           ["ぎんこう", "ginkoo", "Banco"],
@@ -540,7 +562,8 @@ const BLOQUES = [
           ["けしゴム", "keshigomu", "Goma de borrar"],
           ["じしょ", "jisho", "Diccionario"],
           ["きょうかしょ", "kyookasho", "Libro de texto"],
-          ["パソコン", "pasokon", "Ordenador"],
+          ["パソコン", "pasokon", "Ordenador / Portátil"],
+          ["ホッチキス", "hocchikisu", "Grapadora", "En romaji también se ve «hotchikisu»"],
           ["シーディー", "shiidii", "CD"],
         ]
       },
@@ -561,7 +584,7 @@ const BLOQUES = [
         id: "personales", nombre: "Objetos personales",
         cartas: [
           ["かさ", "kasa", "Paraguas"],
-          ["かばん", "kaban", "Bolso / Maleta"],
+          ["かばん", "kaban", "Bolso / Maleta / Maletín"],
           ["くつ", "kutsu", "Zapatos"],
           ["けいたい", "keetai", "Móvil", "Forma completa: けいたいでんわ (keetai denwa)"],
           ["とけい", "tokee", "Reloj"],
@@ -569,7 +592,23 @@ const BLOQUES = [
         ]
       },
       {
-        id: "paises", nombre: "Países e idiomas",
+        id: "clase", nombre: "Palabras de clase",
+        cartas: [
+          ["なまえ", "namae", "Nombre"],
+          ["しごと", "shigoto", "Trabajo"],
+          ["ばしょ", "basho", "Lugar"],
+          ["くに", "kuni", "País"],
+          ["すうじ", "suuji", "Número"],
+          ["しつもん", "shitsumon", "Pregunta"],
+          ["こたえ", "kotae", "Respuesta"],
+          ["ごい", "goi", "Vocabulario"],
+          ["ものがたり", "monogatari", "Historia, cuento, relato"],
+          ["じゃあ", "jaa", "Entonces / Pues"],
+          ["おわり", "owari", "Fin"],
+        ]
+      },
+      {
+        id: "paises", nombre: "Países e idiomas", jp: "くに", ro: "Kuni",
         // Una tarjeta por país: cada línea = país / idioma / persona (separadas con \n)
         cartas: [
           ["くに", "kuni", "País"],
@@ -608,7 +647,7 @@ const BLOQUES = [
   },
 
   {
-    id: "numeros", nombre: "Números", icono: "🔢",
+    id: "numeros", nombre: "Números", icono: "🔢", jp: "すうじ", ro: "Suuji",
     subbloques: [
       {
         id: "general", nombre: "Números",
@@ -621,7 +660,7 @@ const BLOQUES = [
           ["ろく", "roku", "Seis (6)"],
           ["しち / なな", "shichi / nana", "Siete (7)"],
           ["はち", "hachi", "Ocho (8)"],
-          ["きゅう", "kyuu", "Nueve (9)", "También: く (ku)"],
+          ["きゅう", "kyuu", "Nueve (9)"],
           ["じゅう", "juu", "Diez (10)"],
           ["ひゃく", "hyaku", "Cien (100)"],
           ["さんびゃく", "sanbyaku", "Trescientos (300)", "Cambia: byaku, no hyaku"],
@@ -630,6 +669,13 @@ const BLOQUES = [
           ["せん", "sen", "Mil (1000)"],
           ["さんぜん", "sanzen", "Tres mil (3000)", "Cambia: zen, no sen"],
           ["はっせん", "hassen", "Ocho mil (8000)", "Con doble s"],
+        ]
+      },
+      {
+        id: "formar", nombre: "Cómo formar números",
+        cartas: [
+          ["じゅうよん", "juu yon", "Catorce (14)", "10 + 4"],
+          ["よんじゅうはち", "yon juu hachi", "Cuarenta y ocho (48)", "4 + 10 + 8"],
         ]
       },
     ]
@@ -661,9 +707,13 @@ const GIRO_MS = 520;
 const cap = t => t == null ? t : String(t).split("\n")
   .map(l => l.replace(/^([^\p{L}\p{N}]*)(\p{L})/u, (m, a, b) => a + b.toLocaleUpperCase("es"))).join("\n");
 
+/* Título de un tema con su nombre en japonés: «Mi familia · Watashi no kazoku» */
+const etq   = x => x.ro ? `${x.nombre} · ${cap(x.ro)}` : x.nombre;
+const etqJp = x => x.ro ? `${x.nombre} · ${x.jp} · ${cap(x.ro)}` : x.nombre;
+
 const todas = BLOQUES.flatMap(b => b.subbloques.flatMap(s => s.cartas.map(([jp, lectura, es, nota]) => ({
   id: b.id + "|" + s.id + "|" + jp,
-  bloque: b.id, sub: s.id, subNombre: s.nombre, bloqueNombre: b.nombre,
+  bloque: b.id, sub: s.id, subNombre: etq(s), bloqueNombre: b.nombre,
   jp, lectura: cap(lectura), es: cap(es), nota: cap(nota)
 }))));
 
@@ -724,7 +774,7 @@ function pintarSidebar() {
     const activo = b.id === cfg.bloque, desplegable = b.subbloques.length > 1;
     btn.className = "mode" + (activo ? " on" : "");
     if (desplegable) btn.setAttribute("aria-expanded", String(activo && cfg.abierto));
-    btn.innerHTML = `<span>${b.icono || ""} ${esc(b.nombre)}</span><small>${n}${desplegable ? (activo && cfg.abierto ? " ▾" : " ▸") : ""}</small>`;
+    btn.innerHTML = `<span>${b.icono || ""} ${esc(b.nombre)}${b.ro ? `<em class="sro"> · ${esc(b.ro)}</em>` : ""}</span><small>${n}${desplegable ? (activo && cfg.abierto ? " ▾" : " ▸") : ""}</small>`;
     btn.onclick = () => {
       // Mismo bloque: abre/cierra sus apartados. Otro bloque: lo elige y lo abre.
       if (b.id === cfg.bloque) cfg.abierto = !cfg.abierto;
@@ -750,7 +800,7 @@ function pintarSidebar() {
         br.innerHTML = `<i class="conn"></i>`;
         const chip = document.createElement("button");
         chip.className = "chip" + (cfg.subs[b.id].has(s.id) ? " on" : "");
-        chip.innerHTML = `<span>${esc(s.nombre)}</span><small>${s.cartas.length}</small>`;
+        chip.innerHTML = `<span>${esc(s.nombre)}${s.ro ? `<em class="sro">${esc(cap(s.ro))}</em>` : ""}</span><small>${s.cartas.length}</small>`;
         chip.onclick = () => {
           const set = cfg.subs[b.id];
           if (set.size === b.subbloques.length) {
@@ -775,7 +825,7 @@ function pintarSidebar() {
   $("#mRes").classList.toggle("on", modo === "res");
   $("#mFlash").classList.toggle("on", modo !== "learn" && modo !== "res");
   $("#sideBody").classList.toggle("hidden", modo === "res");
-  $("#optsFlash").classList.toggle("hidden", modo === "learn");
+  $("#dirBtn").classList.toggle("hidden", modo === "learn" || modo === "res");
 }
 
 /* ---------- Vistas ---------- */
@@ -812,7 +862,7 @@ function pintarLearn() {
     if (b.subbloques.length > 1) {
       const h = document.createElement("div");
       h.className = "theme-title";
-      h.innerHTML = `<span>${esc(s.nombre)}</span><span>${cartas.length}</span>`;
+      h.innerHTML = `<span>${esc(etqJp(s))}</span><span>${cartas.length}</span>`;
       cont.appendChild(h);
     }
     cartas.forEach(c => {
@@ -875,10 +925,10 @@ function imprimir() {
   const hoy = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
   let h = `<h1>Japonés · material de estudio</h1><p class="pmeta">A1 (N5.1) · Hiragana, katakana y romaji · ${esc(hoy)}</p>`;
   BLOQUES.forEach((b, i) => {
-    h += `<section class="${i ? "nueva" : ""}"><h2>${esc(b.nombre)}</h2>`;
+    h += `<section class="${i ? "nueva" : ""}"><h2>${esc(b.ro ? etqJp(b) : b.nombre)}</h2>`;
     b.subbloques.forEach(s => {
       const cartas = todas.filter(c => c.bloque === b.id && c.sub === s.id);
-      h += `<table class="${cartas.length <= 12 ? "corta" : ""}"><caption>${esc(s.nombre)} (${cartas.length})</caption>` +
+      h += `<table class="${cartas.length <= 12 ? "corta" : ""}"><caption>${esc(etqJp(s))} (${cartas.length})</caption>` +
            `<thead><tr><th>Japonés</th><th>Romaji</th><th>Español</th></tr></thead><tbody>` +
            cartas.map(c => `<tr><td class="j">${celdas(c.jp)}</td><td class="r">${celdas(c.lectura)}</td>` +
              `<td class="e">${celdas(c.es)}${c.nota ? `<span class="nt">${esc(c.nota)}</span>` : ""}</td></tr>`).join("") +
@@ -900,14 +950,22 @@ function pintarFlashHome() {
   $("#empezar").disabled = sel.length === 0;
 }
 
+/* ---------- Dirección de las flashcards: un clic la da la vuelta ---------- */
+let dirV = "es-jp";
+const DIR_TXT = { "es-jp": "Español → Japonés", "jp-es": "Japonés → Español" };
+$("#dirBtn").onclick = () => {
+  const b = $("#dirBtn");
+  b.classList.remove("giro"); void b.offsetWidth; b.classList.add("giro");   // media vuelta
+  dirV = dirV === "es-jp" ? "jp-es" : "es-jp";
+  setTimeout(() => { $("#dirTxt").textContent = DIR_TXT[dirV]; }, 150);      // el texto cambia a mitad del giro
+};
+
 /* ---------- Construcción del mazo (siempre aleatorio) ---------- */
 const construirMazo = lista => barajar([...lista]);
 
 /* ---------- Sesión ---------- */
 function empezar(lista) {
-  const d = $("#dir").value;
-  deck = construirMazo(lista)
-    .map(c => ({ ...c, dir: d === "mixto" ? (Math.random() < .5 ? "jp-es" : "es-jp") : d }));
+  deck = construirMazo(lista).map(c => ({ ...c, dir: dirV }));
   idx = 0; ok = []; fail = []; animando = false;
   modo = "study"; render(); pintarCarta();
 }

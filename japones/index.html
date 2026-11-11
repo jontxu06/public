@@ -126,6 +126,16 @@
   .big{font-size:2.5rem;line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
   .big.es{font-size:1.9rem;font-family:system-ui,sans-serif;font-weight:700}
   .read{opacity:.85;margin-top:12px;font-size:1.3rem;letter-spacing:.02em}
+  /* Tarjetas con varias líneas (país · idioma · persona) */
+  .rows{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .row{display:flex;align-items:baseline;justify-content:center;gap:12px;flex-wrap:wrap}
+  .big.sm{font-size:1.9rem}
+  .row .read{margin-top:0;font-size:1.05rem}
+  .big.es.multi{font-size:1.45rem;line-height:1.6;white-space:pre-line}
+  .item .rows{align-items:flex-start;gap:2px}
+  .item .row{justify-content:flex-start;gap:12px}
+  .item .rows .jp{font-size:1.45rem}
+  .item .es-txt{white-space:pre-line}
   .note{color:var(--muted);margin-top:12px;font-size:.9rem;font-style:italic}
   .hint{text-align:center;color:var(--muted);font-size:.8rem;margin-top:14px}
   .stats{display:flex;gap:12px;margin:16px 0}
@@ -276,7 +286,7 @@ const BLOQUES = [
     id: "expresiones", nombre: "Expresiones", icono: "💬",
     subbloques: [
       {
-        id: "general", nombre: "Expresiones",
+        id: "general", nombre: "Frases y expresiones",
         cartas: [
           ["おはようございます", "ohayou gozaimasu", "Buenos días"],
           ["こんにちは", "konnichiwa", "Hola / Buenas tardes"],
@@ -296,19 +306,24 @@ const BLOQUES = [
           ["いってらっしゃい", "itterasshai", "Que te vaya bien", "Lo dice quien se queda en casa a quien se va"],
           ["ただいま", "tadaima", "Ya estoy en casa", "Se dice al llegar a casa"],
           ["おかえりなさい", "okaerinasai", "Bienvenido a casa", "Lo dice quien está en casa a quien llega"],
-          ["げんきですか", "genki desu ka", "¿Estás bien?"],
           ["げんきです", "genki desu", "Estoy bien"],
           ["まあまあです", "maamaa desu", "Estoy kili-kolo", "Equivale a «así así» o «regular»"],
           ["げんきじゃありません", "genki ja arimasen", "No estoy bien"],
-          ["おなまえは？", "onamae wa?", "¿Cómo te llamas?"],
           ["はい", "hai", "Sí"],
           ["いいえ", "iie", "No"],
-          ["どちらからですか", "dochira kara desu ka", "¿De dónde eres?"],
-          ["なにごができますか", "nanigo ga dekimasu ka", "¿Qué idiomas puedes hablar?"],
           ["はい、できます", "hai, dekimasu", "Sí, puedo hablarlo"],
           ["はい、すこしできます", "hai, sukoshi dekimasu", "Sí, puedo hablarlo un poquito"],
           ["べんきょうちゅうです", "benkyouchuu desu", "Lo estoy estudiando"],
           ["いいえ、できません", "iie, dekimasen", "No puedo / No sé"],
+        ]
+      },
+      {
+        id: "preguntas", nombre: "Preguntas",
+        cartas: [
+          ["げんきですか", "genki desu ka", "¿Estás bien?"],
+          ["おなまえは？", "onamae wa?", "¿Cómo te llamas?"],
+          ["どちらからですか", "dochira kara desu ka", "¿De dónde eres?"],
+          ["なにごができますか", "nanigo ga dekimasu ka", "¿Qué idiomas puedes hablar?"],
         ]
       },
     ]
@@ -344,50 +359,39 @@ const BLOQUES = [
         ]
       },
       {
-        id: "paises", nombre: "Países e idiomas",   // ← cámbiale el nombre aquí si prefieres otro
+        id: "paises", nombre: "Países e idiomas",
+        // Una tarjeta por país: cada línea = país / idioma / persona (separadas con \n)
         cartas: [
-          // --- Países ---
           ["くに", "kuni", "País"],
-          ["にほん", "nihon", "Japón", "Kanji: 日本"],
-          ["かんこく", "kankoku", "Corea", "Kanji: 韓国"],
-          ["ちゅうごく", "chuugoku", "China", "Kanji: 中国"],
-          ["エジプト", "ejiputo", "Egipto"],
-          ["ドイツ", "doitsu", "Alemania"],
-          ["オーストラリア", "oosutoraria", "Australia"],
-          ["スペイン", "supein", "España"],
-          ["イギリス", "igirisu", "Inglaterra"],
-          ["アメリカ", "amerika", "Estados Unidos"],
-          ["フランス", "furansu", "Francia"],
-          ["タイ", "tai", "Tailandia"],
-          ["ブラジル", "burajiru", "Brasil"],
-          ["ポルトガル", "porutogaru", "Portugal"],
-          // --- Gentilicios (país + じん) ---
           ["じん", "jin", "Persona de… (sufijo de gentilicio)", "Se añade al nombre del país: país + じん"],
-          ["にほんじん", "nihonjin", "Japonés/a"],
-          ["かんこくじん", "kankokujin", "Coreano/a"],
-          ["ちゅうごくじん", "chuugokujin", "Chino/a"],
-          ["エジプトじん", "ejiputojin", "Egipcio/a"],
-          ["ドイツじん", "doitsujin", "Alemán/a"],
-          ["オーストラリアじん", "oosutorariajin", "Australiano/a"],
-          ["スペインじん", "supeinjin", "Español/a"],
-          ["イギリスじん", "igirisujin", "Inglés/a"],
-          ["アメリカじん", "amerikajin", "Estadounidense"],
-          ["フランスじん", "furansujin", "Francés/a"],
-          ["タイじん", "taijin", "Tailandés/a"],
-          ["ブラジルじん", "burajirujin", "Brasileño/a"],
-          ["ポルトガルじん", "porutogarujin", "Portugués/a"],
-          // --- Idiomas (país + ご) ---
           ["ご", "go", "Idioma (sufijo)", "Se añade al nombre del país: país + ご"],
-          ["スペインご", "supeingo", "Español (idioma)"],
-          ["にほんご", "nihongo", "Japonés (idioma)"],
-          ["ちゅうごくご", "chuugokugo", "Chino (idioma)"],
-          ["ポルトガルご", "porutogarugo", "Portugués (idioma)"],
-          ["えいご", "eigo", "Inglés (idioma)"],
-          ["アラビアご", "arabiago", "Árabe (idioma)"],
-          ["かんこくご", "kankokugo", "Coreano (idioma)"],
-          ["フランスご", "furansugo", "Francés (idioma)"],
-          ["ドイツご", "doitsugo", "Alemán (idioma)"],
-          ["タイご", "taigo", "Tailandés (idioma)"],
+          ["にほん\nにほんご\nにほんじん", "nihon\nnihongo\nnihonjin",
+            "Japón\nJaponés (idioma)\nJaponés/a (persona)", "Kanji: 日本 · 日本語 · 日本人"],
+          ["かんこく\nかんこくご\nかんこくじん", "kankoku\nkankokugo\nkankokujin",
+            "Corea\nCoreano (idioma)\nCoreano/a (persona)", "Kanji: 韓国 · 韓国語 · 韓国人"],
+          ["ちゅうごく\nちゅうごくご\nちゅうごくじん", "chuugoku\nchuugokugo\nchuugokujin",
+            "China\nChino (idioma)\nChino/a (persona)", "Kanji: 中国 · 中国語 · 中国人"],
+          ["ドイツ\nドイツご\nドイツじん", "doitsu\ndoitsugo\ndoitsujin",
+            "Alemania\nAlemán (idioma)\nAlemán/a (persona)"],
+          ["スペイン\nスペインご\nスペインじん", "supein\nsupeingo\nsupeinjin",
+            "España\nEspañol (idioma)\nEspañol/a (persona)"],
+          ["フランス\nフランスご\nフランスじん", "furansu\nfuransugo\nfuransujin",
+            "Francia\nFrancés (idioma)\nFrancés/a (persona)"],
+          ["タイ\nタイご\nタイじん", "tai\ntaigo\ntaijin",
+            "Tailandia\nTailandés (idioma)\nTailandés/a (persona)"],
+          ["ポルトガル\nポルトガルご\nポルトガルじん", "porutogaru\nporutogarugo\nporutogarujin",
+            "Portugal\nPortugués (idioma)\nPortugués/a (persona)"],
+          ["イギリス\nえいご\nイギリスじん", "igirisu\neigo\nigirisujin",
+            "Inglaterra\nInglés (idioma)\nInglés/a (persona)", "Excepción: el idioma es えいご, no イギリスご"],
+          ["エジプト\nエジプトじん", "ejiputo\nejiputojin",
+            "Egipto\nEgipcio/a (persona)", "Su idioma es el árabe: アラビアご"],
+          ["オーストラリア\nオーストラリアじん", "oosutoraria\noosutorariajin",
+            "Australia\nAustraliano/a (persona)", "Su idioma es el inglés: えいご"],
+          ["アメリカ\nアメリカじん", "amerika\namerikajin",
+            "Estados Unidos\nEstadounidense (persona)", "Su idioma es el inglés: えいご"],
+          ["ブラジル\nブラジルじん", "burajiru\nburajirujin",
+            "Brasil\nBrasileño/a (persona)", "Su idioma es el portugués: ポルトガルご"],
+          ["アラビアご", "arabiago", "Árabe (idioma)", "Excepción: no lleva el nombre de un país"],
         ]
       },
     ]
@@ -467,6 +471,11 @@ let modo = "flash";           // learn | flash | study | end
 let deck = [], idx = 0, girada = false, animando = false, ok = [], fail = [];
 
 const esc = s => { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; };
+
+/* Tarjetas con varias líneas: se separan con "\n" (p. ej. país / idioma / persona) */
+const lineas = s => String(s ?? "").split("\n");
+const plano = s => String(s ?? "").replace(/\n/g, " / ");
+const esMulti = c => c.jp.includes("\n");
 const barajar = a => { for (let i = a.length - 1; i > 0; i--) {
   const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -509,7 +518,15 @@ function pintarSidebar() {
         chip.innerHTML = `<span>${esc(s.nombre)}</span><small>${s.cartas.length}</small>`;
         chip.onclick = () => {
           const set = cfg.subs[b.id];
-          set.has(s.id) ? set.delete(s.id) : set.add(s.id);
+          if (set.size === b.subbloques.length) {
+            // Todo estaba marcado: el primer clic deja SOLO este apartado
+            set.clear(); set.add(s.id);
+          } else if (set.has(s.id)) {
+            set.delete(s.id);
+            if (set.size === 0) b.subbloques.forEach(x => set.add(x.id));  // sin ninguno → vuelve a todos
+          } else {
+            set.add(s.id);                                                   // añade a lo ya elegido
+          }
           refrescar();
         };
         br.appendChild(chip);
@@ -565,10 +582,19 @@ function pintarLearn() {
       const p = progreso[c.id];
       const el = document.createElement("div");
       el.className = "item";
+      let jpHtml;
+      if (esMulti(c)) {
+        const jp = lineas(c.jp), ro = lineas(c.lectura);
+        jpHtml = `<div class="rows">` + jp.map((t, i) =>
+          `<div class="row"><span class="jp jpfont">${esc(t)}</span><span class="ro">${esc(ro[i] || "")}</span></div>`
+        ).join("") + `</div>`;
+      } else {
+        jpHtml = `<div class="jp jpfont">${esc(c.jp)}</div>` +
+                 `<div class="ro">${esc(c.lectura || "⚠ falta romaji")}</div>`;
+      }
       el.innerHTML =
         (p && p.fail > 0 ? `<span class="badge">🔥 fallada ${p.fail} ${p.fail === 1 ? "vez" : "veces"}</span>` : "") +
-        `<div class="jp jpfont">${esc(c.jp)}</div>` +
-        `<div class="ro">${esc(c.lectura || "⚠ falta romaji")}</div>` +
+        jpHtml +
         `<div class="es-txt">${esc(c.es)}</div>` +
         (c.nota ? `<div class="nt">${esc(c.nota)}</div>` : "");
       el.onclick = () => el.classList.toggle("visto");
@@ -630,9 +656,17 @@ function pintarCarta() {
 
   const tag = `<span class="tag">${esc(c.subNombre)}</span>`;
   const nt  = c.nota ? `<div class="note">${esc(c.nota)}</div>` : "";
-  const ladoJP = `<div class="big">${esc(c.jp)}</div>` +
-                 `<div class="read">${esc(c.lectura || "⚠ falta romaji")}</div>`;
-  const ladoES = `<div class="big es">${esc(c.es)}</div>`;
+  let ladoJP;
+  if (esMulti(c)) {
+    const jp = lineas(c.jp), ro = lineas(c.lectura);
+    ladoJP = `<div class="rows">` + jp.map((t, i) =>
+      `<div class="row"><span class="big sm">${esc(t)}</span><span class="read">${esc(ro[i] || "")}</span></div>`
+    ).join("") + `</div>`;
+  } else {
+    ladoJP = `<div class="big">${esc(c.jp)}</div>` +
+             `<div class="read">${esc(c.lectura || "⚠ falta romaji")}</div>`;
+  }
+  const ladoES = `<div class="big es${esMulti(c) ? " multi" : ""}">${esc(c.es)}</div>`;
 
   if (c.dir === "jp-es") {
     $("#front").innerHTML = tag + ladoJP;
@@ -708,7 +742,7 @@ function terminar() {
   $("#sOk").textContent = ok.length; $("#sFail").textContent = fail.length;
   $("#failsBox").classList.toggle("hidden", unicas.length === 0);
   $("#repetirFallos").classList.toggle("hidden", unicas.length === 0);
-  $("#failsList").innerHTML = unicas.map(c => `<li>${esc(c.jp)} (${esc(c.lectura)}) — ${esc(c.es)}</li>`).join("");
+  $("#failsList").innerHTML = unicas.map(c => `<li>${esc(plano(c.jp))} (${esc(plano(c.lectura))}) — ${esc(plano(c.es))}</li>`).join("");
   modo = "end"; render();
 }
 

@@ -208,29 +208,34 @@
     body{padding-left:var(--side)}
   }
 
-  /* ---------- Impresión (PDF) ---------- */
+  /* ---------- Documento (vista previa en pantalla = lo que se imprime) ---------- */
+  .doc{color:#000;font-size:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc h1{font-size:1.5em;margin:0 0 .2em}
+  .doc .pmeta{margin:0 0 1em;color:#555;font-size:.9em}
+  .doc h2{font-size:1.3em;margin:0 0 .5em;padding-bottom:.2em;border-bottom:2px solid #d94b5b;
+    color:#000;text-transform:none;letter-spacing:0}
+  .doc section.nueva{margin-top:2em;padding-top:1.2em;border-top:2px dashed #bbb}
+  .doc table{width:100%;border-collapse:collapse;margin:0 0 1.2em;table-layout:fixed}
+  .doc caption{caption-side:top;text-align:left;font-weight:700;font-size:1.05em;padding:.2em 0;break-after:avoid}
+  .doc th{background:#f1e4e6;text-align:left;font-size:.9em;padding:.25em .5em;border:1px solid #bbb}
+  .doc td{padding:.2em .5em;border:1px solid #ccc;vertical-align:top;line-height:1.3;overflow-wrap:anywhere}
+  .doc tr{break-inside:avoid}
+  .doc td.j{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif;font-size:1.1em}
+  .doc th:nth-child(1),.doc td.j{width:30%} .doc th:nth-child(2),.doc td.r{width:30%} .doc th:nth-child(3),.doc td.e{width:40%}
+  .doc .nt{display:block;color:#555;font-size:.85em;font-style:italic}
+  .papel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 14px;box-shadow:var(--shadow);margin-top:6px}
+  @media (max-width:600px){.papel{padding:14px 10px}.papel .doc{font-size:12px}}
+  .salir.imprimir{background:var(--grad);color:#fff;border-color:transparent}
+  #docAcciones{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px}
   @media print{
     @page{size:A4;margin:11mm}
     html,body{background:#fff!important;color:#000!important}
-    body{padding-left:0!important;min-height:0!important;font-size:9pt}
+    body{padding-left:0!important;min-height:0!important}
     body>*:not(#printArea){display:none!important}
-    #printArea{display:block!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    #printArea h1{font-size:17pt;margin:0 0 2mm}
-    #printArea .pmeta{margin:0 0 5mm;color:#555;font-size:9pt}
-    #printArea h2{font-size:14pt;margin:0 0 3mm;padding-bottom:1mm;border-bottom:2px solid #d94b5b;
-      color:#000;text-transform:none;letter-spacing:0}
-    #printArea section.nueva{break-before:page}
-    #printArea table{width:100%;border-collapse:collapse;margin:0 0 4mm}
+    #printArea{display:block!important;font-size:9pt}
+    #printArea section.nueva{break-before:page;margin-top:0;padding-top:0;border-top:0}
+    #printArea table{margin-bottom:4mm}
     #printArea table.corta{break-inside:avoid}
-    #printArea caption{caption-side:top;text-align:left;font-weight:700;font-size:10.5pt;padding:1mm 0 1mm;
-      break-after:avoid}
-    #printArea th{background:#f1e4e6;text-align:left;font-size:8.5pt;padding:1mm 2mm;border:1px solid #bbb}
-    #printArea td{padding:.5mm 2mm;border:1px solid #ccc;vertical-align:top;line-height:1.25}
-    #printArea tr{break-inside:avoid}
-    #printArea td.j{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif;font-size:10pt;width:30%}
-    #printArea td.r{width:30%}
-    #printArea td.e{width:40%}
-    #printArea .nt{display:block;color:#555;font-size:8pt;font-style:italic}
   }
 </style>
 </head>
@@ -301,6 +306,16 @@
     </div>
   </section>
 
+  <!-- Vista previa del material (imprimir / PDF) -->
+  <section id="vDoc" class="hidden">
+    <div id="docAcciones">
+      <button class="salir" id="docSalir" aria-label="Salir de la vista previa">← Salir</button>
+      <button class="salir imprimir" id="docPrint">🖨 Imprimir / PDF</button>
+    </div>
+    <div class="papel"><div class="doc" id="docPrev"></div></div>
+    <p class="hint">Es la vista previa de lo que se imprime. Con «Imprimir / PDF» puedes imprimirlo o elegir «Guardar como PDF».</p>
+  </section>
+
   <!-- Inicio flashcards -->
   <section id="vFlash" class="hidden">
     <div class="panel center">
@@ -353,7 +368,7 @@
 </main>
 
 <!-- Contenido para imprimir (se rellena al pulsar «Imprimir recursos») -->
-<div id="printArea"></div>
+<div id="printArea" class="doc"></div>
 
 <script>
 /* ==========================================================================
@@ -654,7 +669,7 @@ const BLOQUES = [
     id: "numeros", nombre: "Números", icono: "🔢", jp: "すうじ", ro: "Suuji",
     subbloques: [
       {
-        id: "general", nombre: "Números",
+        id: "basicos", nombre: "Números básicos",
         cartas: [
           ["いち", "ichi", "Uno (1)"],
           ["に", "ni", "Dos (2)"],
@@ -667,10 +682,15 @@ const BLOQUES = [
           ["きゅう", "kyuu", "Nueve (9)"],
           ["じゅう", "juu", "Diez (10)"],
           ["ひゃく", "hyaku", "Cien (100)"],
+          ["せん", "sen", "Mil (1000)"],
+        ]
+      },
+      {
+        id: "irregulares", nombre: "Números irregulares",
+        cartas: [
           ["さんびゃく", "sanbyaku", "Trescientos (300)", "Cambia: byaku, no hyaku"],
           ["ろっぴゃく", "roppyaku", "Seiscientos (600)", "Cambia: ppyaku, no hyaku"],
           ["はっぴゃく", "happyaku", "Ochocientos (800)", "Cambia: ppyaku, no hyaku"],
-          ["せん", "sen", "Mil (1000)"],
           ["さんぜん", "sanzen", "Tres mil (3000)", "Cambia: zen, no sen"],
           ["はっせん", "hassen", "Ocho mil (8000)", "Con doble s"],
         ]
@@ -820,23 +840,26 @@ function pintarSidebar() {
 
   $("#mLearn").classList.toggle("on", modo === "learn");
   $("#mRes").classList.toggle("on", modo === "res");
-  $("#mFlash").classList.toggle("on", modo !== "learn" && modo !== "res");
-  $("#sideBody").classList.toggle("hidden", modo === "res");
-  $("#dirBtn").classList.toggle("hidden", modo === "learn" || modo === "res");
+  $("#mFlash").classList.toggle("on", !["learn", "res", "doc"].includes(modo));
+  $("#mPrint").classList.toggle("on", modo === "doc");
+  $("#sideBody").classList.toggle("hidden", modo === "res" || modo === "doc");
+  $("#dirBtn").classList.toggle("hidden", ["learn", "res", "doc"].includes(modo));
 }
 
 /* ---------- Vistas ---------- */
 function render() {
-  const vistas = { learn: "vLearn", flash: "vFlash", study: "vStudy", end: "vEnd", res: "vRes" };
+  const vistas = { learn: "vLearn", flash: "vFlash", study: "vStudy", end: "vEnd", res: "vRes", doc: "vDoc" };
   Object.entries(vistas).forEach(([m, id]) => $("#" + id).classList.toggle("hidden", m !== modo));
   if (modo !== "res") cerrarRecurso();
+  if (modo === "doc") $("#docPrev").innerHTML = htmlRecursos();
+  document.querySelector(".main").classList.toggle("ancho", modo === "doc" || (modo === "res" && !$("#resVisor").classList.contains("hidden")));
   refrescar();
 }
 
 function refrescar() {
   pintarSidebar();
   $("#titulo").textContent = modo === "learn" ? "Aprender · " + bloqueActual().nombre
-    : modo === "end" ? "Resultado" : modo === "res" ? "Recursos extra" : "Flashcards · " + bloqueActual().nombre;
+    : modo === "end" ? "Resultado" : modo === "res" ? "Recursos extra" : modo === "doc" ? "Material para imprimir" : "Flashcards · " + bloqueActual().nombre;
   if (modo === "learn") pintarLearn();
   if (modo === "flash") pintarFlashHome();
 }
@@ -925,7 +948,7 @@ function cerrarRecurso() {
 $("#resSalir").onclick = cerrarRecurso;
 
 /* ---------- Imprimir recursos: genera tablas con TODO el contenido y abre la impresión (Guardar como PDF) ---------- */
-function imprimir() {
+function htmlRecursos() {
   const celdas = t => lineas(t).map(esc).join("<br>");
   const hoy = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
   let h = `<h1>Japonés · material de estudio</h1><p class="pmeta">A1 (N5.1) · Hiragana, katakana y romaji · ${esc(hoy)}</p>`;
@@ -941,8 +964,10 @@ function imprimir() {
     });
     h += `</section>`;
   });
-  $("#printArea").innerHTML = h;
-  cerrarMenu();
+  return h;
+}
+function imprimir() {
+  $("#printArea").innerHTML = htmlRecursos();
   setTimeout(() => print(), 50);
 }
 addEventListener("afterprint", () => { $("#printArea").innerHTML = ""; });
@@ -1105,7 +1130,9 @@ function terminar() {
 $("#mLearn").onclick = () => { modo = "learn"; cerrarMenu(); render(); };
 $("#mFlash").onclick = () => { modo = "flash"; cerrarMenu(); render(); };
 $("#mRes").onclick = () => { modo = "res"; cerrarMenu(); render(); };
-$("#mPrint").onclick = imprimir;
+$("#mPrint").onclick = () => { modo = "doc"; cerrarMenu(); render(); };
+$("#docPrint").onclick = imprimir;
+$("#docSalir").onclick = () => { modo = "flash"; render(); };
 $("#irRepasar").onclick = () => { modo = "flash"; render(); };
 $("#empezar").onclick = () => { cerrarMenu(); empezar(seleccion()); };
 
@@ -1171,6 +1198,7 @@ $("#salir").onclick = () => { animando = false; modo = "flash"; render(); };
 $("#volver").onclick = () => { modo = "flash"; render(); };
 $("#repetirFallos").onclick = () => empezar([...new Map(fail.map(c => [c.id, c])).values()]);
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && modo === "doc") { modo = "flash"; return render(); }
   if (e.key === "Escape" && modo === "res" && !$("#resVisor").classList.contains("hidden")) return cerrarRecurso();
   if (modo !== "study") return;
   if (e.code === "Space") { e.preventDefault(); girar(); }

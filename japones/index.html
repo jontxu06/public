@@ -45,7 +45,12 @@
   .recurso{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;
     background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 16px;min-height:56px;
     margin-bottom:10px;color:var(--text);font-size:1.02rem;font-weight:600;cursor:pointer;box-shadow:var(--shadow)}
-  .recurso small{color:var(--muted);font-weight:500}
+  .recurso-fila{display:flex;gap:8px;margin-bottom:10px;align-items:stretch}
+  .recurso-fila .recurso{margin-bottom:0;flex:1;min-width:0}
+  .abrir-nueva{flex:none;display:flex;align-items:center;justify-content:center;text-align:center;width:112px;
+    min-height:56px;padding:6px 8px;border-radius:14px;border:1px solid var(--border);background:var(--panel2);
+    color:var(--text);font-size:.85rem;font-weight:600;line-height:1.2;text-decoration:none;box-shadow:var(--shadow)}
+  .abrir-nueva:active{transform:scale(.97)}
   .visor{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;
     height:calc(100vh - 230px);height:calc(100dvh - 230px);min-height:380px}
   .visor iframe{width:100%;height:100%;border:0;display:block}
@@ -890,9 +895,17 @@ document.querySelectorAll("#ocultarSeg button").forEach(btn => btn.onclick = () 
 RECURSOS.forEach(r => {
   const b = document.createElement("button");
   b.className = "recurso";
-  b.innerHTML = `<span>${esc(r.nombre)}</span><small>Ver ›</small>`;
+  b.innerHTML = `<span>${esc(r.nombre)}</span>`;
   b.onclick = () => abrirRecurso(r);
-  $("#resBtns").appendChild(b);
+  const fila = document.createElement("div");
+  fila.className = "recurso-fila";
+  const a = document.createElement("a");
+  a.className = "abrir-nueva";
+  a.href = r.url; a.target = "_blank"; a.rel = "noopener";
+  a.setAttribute("aria-label", "Abrir " + r.nombre + " en una pestaña nueva");
+  a.textContent = "Abrir en pestaña nueva ↗";
+  fila.append(b, a);
+  $("#resBtns").appendChild(fila);
 });
 function abrirRecurso(r) {
   $("#resTitulo").textContent = r.nombre;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>日本語 Flashcards</title>
+<title>にほんご Flashcards</title>
 <style>
   :root{
     color-scheme:dark;
@@ -99,8 +99,8 @@
   .item{background:var(--panel);border:1px solid var(--border);border-left:5px solid var(--accent);
     border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;flex-direction:column;gap:2px;
     box-shadow:var(--shadow);cursor:pointer}
-  .item .jp{font-size:1.75rem;line-height:1.3;transition:filter .15s}
-  .item .ro{font-size:1.08rem;opacity:.85;transition:filter .15s}
+  .item .jp{font-size:1.5rem;line-height:1.3;transition:filter .15s}
+  .item .ro{font-size:1.5rem;opacity:.85;transition:filter .15s}
   .item .es-txt{font-size:1.08rem;color:var(--es);margin-top:6px;font-weight:600;transition:filter .15s}
   .item .nt{font-size:.85rem;color:var(--muted);font-style:italic;margin-top:2px;transition:filter .15s}
   .item .badge{align-self:flex-start;font-size:.72rem;color:var(--fail);margin-bottom:4px;font-weight:700}
@@ -123,18 +123,18 @@
   .face.back{transform:rotateY(180deg)}
   .tag{position:absolute;top:14px;left:16px;font-size:.74rem;color:var(--muted);
     background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
-  .big{font-size:2.5rem;line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
+  .big{font-size:2.1rem;line-height:1.25;word-break:break-word;font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif}
   .big.es{font-size:1.9rem;font-family:system-ui,sans-serif;font-weight:700}
-  .read{opacity:.85;margin-top:12px;font-size:1.3rem;letter-spacing:.02em}
+  .read{opacity:.85;margin-top:12px;font-size:2.1rem;letter-spacing:.02em}
   /* Tarjetas con varias líneas (país · idioma · persona) */
   .rows{display:flex;flex-direction:column;gap:10px;align-items:center}
   .row{display:flex;align-items:baseline;justify-content:center;gap:12px;flex-wrap:wrap}
-  .big.sm{font-size:1.9rem}
-  .row .read{margin-top:0;font-size:1.05rem}
+  .big.sm{font-size:1.6rem}
+  .row .read{margin-top:0;font-size:1.6rem}
   .big.es.multi{font-size:1.45rem;line-height:1.6;white-space:pre-line}
   .item .rows{align-items:flex-start;gap:2px}
   .item .row{justify-content:flex-start;gap:12px}
-  .item .rows .jp{font-size:1.45rem}
+  .item .rows .jp,.item .rows .ro{font-size:1.3rem}
   .item .es-txt{white-space:pre-line}
   .note{color:var(--muted);margin-top:12px;font-size:.9rem;font-style:italic}
   .hint{text-align:center;color:var(--muted);font-size:.8rem;margin-top:14px}
@@ -169,7 +169,7 @@
 <div class="overlay" id="overlay"></div>
 <aside class="side" id="side">
   <div class="side-head">
-    <div class="brand">日本語<small>Flashcards de clase</small></div>
+    <div class="brand">にほんご<small>Flashcards de clase</small></div>
     <button class="close" id="cerrar" aria-label="Cerrar menú">✕</button>
   </div>
 
@@ -288,20 +288,20 @@ const BLOQUES = [
       {
         id: "general", nombre: "Frases y expresiones",
         cartas: [
-          ["おはようございます", "ohayou gozaimasu", "Buenos días"],
+          ["おはようございます", "ohayoo gozaimasu", "Buenos días"],
           ["こんにちは", "konnichiwa", "Hola / Buenas tardes"],
           ["こんばんは", "konbanwa", "Buenas noches (al encontrarse)"],
-          ["さようなら", "sayounara", "Adiós"],
+          ["さようなら", "sayoonara", "Adiós"],
           ["おやすみなさい", "oyasuminasai", "Descansa / Buenas noches (al irse a dormir)"],
-          ["ありがとうございます", "arigatou gozaimasu", "Gracias"],
+          ["ありがとうございます", "arigatoo gozaimasu", "Gracias"],
           ["おねがい", "onegai", "Por favor", "Más educado: おねがいします (onegai shimasu)"],
           ["いえいえ", "ie ie", "De nada (informal)"],
-          ["どういたしまして", "dou itashimashite", "De nada (respuesta a gracias)"],
+          ["どういたしまして", "doo itashimashite", "De nada (respuesta a gracias)"],
           ["すみません", "sumimasen", "Perdón por interrumpir / Disculpe"],
           ["ごめんなさい", "gomen nasai", "Lo siento", "Cuando te sientes mal por lo que ha pasado"],
-          ["しつれいします", "shitsurei shimasu", "Permiso / Perdón por molestar"],
+          ["しつれいします", "shitsuree shimasu", "Permiso / Perdón por molestar"],
           ["いただきます", "itadakimasu", "Que aproveche", "Se dice antes de comer"],
-          ["ごちそうさまでした", "gochisousama deshita", "Gracias por la comida", "Se dice después de comer"],
+          ["ごちそうさまでした", "gochisoosama deshita", "Gracias por la comida", "Se dice después de comer"],
           ["いってきます", "ittekimasu", "Me voy (al salir de casa)", "Lo dice quien sale"],
           ["いってらっしゃい", "itterasshai", "Que te vaya bien", "Lo dice quien se queda en casa a quien se va"],
           ["ただいま", "tadaima", "Ya estoy en casa", "Se dice al llegar a casa"],
@@ -313,7 +313,7 @@ const BLOQUES = [
           ["いいえ", "iie", "No"],
           ["はい、できます", "hai, dekimasu", "Sí, puedo hablarlo"],
           ["はい、すこしできます", "hai, sukoshi dekimasu", "Sí, puedo hablarlo un poquito"],
-          ["べんきょうちゅうです", "benkyouchuu desu", "Lo estoy estudiando"],
+          ["べんきょうちゅうです", "benkyoochuu desu", "Lo estoy estudiando"],
           ["いいえ、できません", "iie, dekimasen", "No puedo / No sé"],
         ]
       },
@@ -365,33 +365,33 @@ const BLOQUES = [
           ["くに", "kuni", "País"],
           ["じん", "jin", "Persona de… (sufijo de gentilicio)", "Se añade al nombre del país: país + じん"],
           ["ご", "go", "Idioma (sufijo)", "Se añade al nombre del país: país + ご"],
-          ["にほん\nにほんご\nにほんじん", "nihon\nnihongo\nnihonjin",
-            "Japón\nJaponés (idioma)\nJaponés/a (persona)", "Kanji: 日本 · 日本語 · 日本人"],
-          ["かんこく\nかんこくご\nかんこくじん", "kankoku\nkankokugo\nkankokujin",
-            "Corea\nCoreano (idioma)\nCoreano/a (persona)", "Kanji: 韓国 · 韓国語 · 韓国人"],
-          ["ちゅうごく\nちゅうごくご\nちゅうごくじん", "chuugoku\nchuugokugo\nchuugokujin",
-            "China\nChino (idioma)\nChino/a (persona)", "Kanji: 中国 · 中国語 · 中国人"],
-          ["ドイツ\nドイツご\nドイツじん", "doitsu\ndoitsugo\ndoitsujin",
+          ["にほん\nにほんご\nにほんじん", "Nihon\nNihongo\nNihonjin",
+            "Japón\nJaponés (idioma)\nJaponés/a (persona)"],
+          ["かんこく\nかんこくご\nかんこくじん", "Kankoku\nKankokugo\nKankokujin",
+            "Corea\nCoreano (idioma)\nCoreano/a (persona)"],
+          ["ちゅうごく\nちゅうごくご\nちゅうごくじん", "Chuugoku\nChuugokugo\nChuugokujin",
+            "China\nChino (idioma)\nChino/a (persona)"],
+          ["ドイツ\nドイツご\nドイツじん", "Doitsu\nDoitsugo\nDoitsujin",
             "Alemania\nAlemán (idioma)\nAlemán/a (persona)"],
-          ["スペイン\nスペインご\nスペインじん", "supein\nsupeingo\nsupeinjin",
+          ["スペイン\nスペインご\nスペインじん", "Supein\nSupeingo\nSupeinjin",
             "España\nEspañol (idioma)\nEspañol/a (persona)"],
-          ["フランス\nフランスご\nフランスじん", "furansu\nfuransugo\nfuransujin",
+          ["フランス\nフランスご\nフランスじん", "Furansu\nFuransugo\nFuransujin",
             "Francia\nFrancés (idioma)\nFrancés/a (persona)"],
-          ["タイ\nタイご\nタイじん", "tai\ntaigo\ntaijin",
+          ["タイ\nタイご\nタイじん", "Tai\nTaigo\nTaijin",
             "Tailandia\nTailandés (idioma)\nTailandés/a (persona)"],
-          ["ポルトガル\nポルトガルご\nポルトガルじん", "porutogaru\nporutogarugo\nporutogarujin",
+          ["ポルトガル\nポルトガルご\nポルトガルじん", "Porutogaru\nPorutogarugo\nPorutogarujin",
             "Portugal\nPortugués (idioma)\nPortugués/a (persona)"],
-          ["イギリス\nえいご\nイギリスじん", "igirisu\neigo\nigirisujin",
+          ["イギリス\nえいご\nイギリスじん", "Igirisu\nEego\nIgirisujin",
             "Inglaterra\nInglés (idioma)\nInglés/a (persona)", "Excepción: el idioma es えいご, no イギリスご"],
-          ["エジプト\nエジプトじん", "ejiputo\nejiputojin",
+          ["エジプト\nエジプトじん", "Ejiputo\nEjiputojin",
             "Egipto\nEgipcio/a (persona)", "Su idioma es el árabe: アラビアご"],
-          ["オーストラリア\nオーストラリアじん", "oosutoraria\noosutorariajin",
+          ["オーストラリア\nオーストラリアじん", "Oosutoraria\nOosutorariajin",
             "Australia\nAustraliano/a (persona)", "Su idioma es el inglés: えいご"],
-          ["アメリカ\nアメリカじん", "amerika\namerikajin",
+          ["アメリカ\nアメリカじん", "Amerika\nAmerikajin",
             "Estados Unidos\nEstadounidense (persona)", "Su idioma es el inglés: えいご"],
-          ["ブラジル\nブラジルじん", "burajiru\nburajirujin",
+          ["ブラジル\nブラジルじん", "Burajiru\nBurajirujin",
             "Brasil\nBrasileño/a (persona)", "Su idioma es el portugués: ポルトガルご"],
-          ["アラビアご", "arabiago", "Árabe (idioma)", "Excepción: no lleva el nombre de un país"],
+          ["アラビアご", "Arabiago", "Árabe (idioma)", "Excepción: no lleva el nombre de un país"],
         ]
       },
     ]
@@ -403,21 +403,21 @@ const BLOQUES = [
       {
         id: "general", nombre: "Números",
         cartas: [
-          ["いち", "ichi", "Uno (1)", "Kanji: 一"],
-          ["に", "ni", "Dos (2)", "Kanji: 二"],
-          ["さん", "san", "Tres (3)", "Kanji: 三"],
-          ["し / よん", "shi / yon", "Cuatro (4)", "Kanji: 四"],
-          ["ご", "go", "Cinco (5)", "Kanji: 五"],
-          ["ろく", "roku", "Seis (6)", "Kanji: 六"],
-          ["しち / なな", "shichi / nana", "Siete (7)", "Kanji: 七"],
-          ["はち", "hachi", "Ocho (8)", "Kanji: 八"],
-          ["きゅう", "kyuu", "Nueve (9)", "Kanji: 九 · También: く (ku)"],
-          ["じゅう", "juu", "Diez (10)", "Kanji: 十"],
-          ["ひゃく", "hyaku", "Cien (100)", "Kanji: 百"],
+          ["いち", "ichi", "Uno (1)"],
+          ["に", "ni", "Dos (2)"],
+          ["さん", "san", "Tres (3)"],
+          ["し / よん", "shi / yon", "Cuatro (4)"],
+          ["ご", "go", "Cinco (5)"],
+          ["ろく", "roku", "Seis (6)"],
+          ["しち / なな", "shichi / nana", "Siete (7)"],
+          ["はち", "hachi", "Ocho (8)"],
+          ["きゅう", "kyuu", "Nueve (9)", "También: く (ku)"],
+          ["じゅう", "juu", "Diez (10)"],
+          ["ひゃく", "hyaku", "Cien (100)"],
           ["さんびゃく", "sanbyaku", "Trescientos (300)", "Cambia: byaku, no hyaku"],
           ["ろっぴゃく", "roppyaku", "Seiscientos (600)", "Cambia: ppyaku, no hyaku"],
           ["はっぴゃく", "happyaku", "Ochocientos (800)", "Cambia: ppyaku, no hyaku"],
-          ["せん", "sen", "Mil (1000)", "Kanji: 千"],
+          ["せん", "sen", "Mil (1000)"],
           ["さんぜん", "sanzen", "Tres mil (3000)", "Cambia: zen, no sen"],
           ["はっせん", "hassen", "Ocho mil (8000)", "Con doble s"],
         ]

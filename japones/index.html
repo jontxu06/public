@@ -222,6 +222,8 @@
   .doc tr{break-inside:avoid}
   .doc td.j{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Meiryo",system-ui,sans-serif;font-size:1.1em}
   .doc th:nth-child(1),.doc td.j{width:30%} .doc th:nth-child(2),.doc td.r{width:30%} .doc th:nth-child(3),.doc td.e{width:40%}
+  .doc .snota{margin:-.6em 0 1.2em;padding:0;background:none;border:0;border-radius:0;font-size:.95em;font-style:italic;color:#444}
+  .snota{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--border);color:var(--muted);font-size:.95rem}
   .doc .nt{display:block;color:#555;font-size:.85em;font-style:italic}
   .papel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 14px;box-shadow:var(--shadow);margin-top:6px}
   @media (max-width:600px){.papel{padding:14px 10px}.papel .doc{font-size:12px}}
@@ -500,8 +502,9 @@ const BLOQUES = [
       },
       {
         id: "demostrativos", nombre: "Esto, eso, aquello",
+        nota: "Se usa así: これ / それ / あれ + は + ___  (kore / sore / are + wa + ___)",
         cartas: [
-          ["これ", "kore", "Esto", "Se usa así: これ / それ / あれ + は + ___"],
+          ["これ", "kore", "Esto"],
           ["それ", "sore", "Eso"],
           ["あれ", "are", "Aquello"],
         ]
@@ -885,6 +888,12 @@ function pintarLearn() {
       h.innerHTML = `<span>${esc(etqJp(s))}</span><span>${cartas.length}</span>`;
       cont.appendChild(h);
     }
+    if (s.nota) {
+      const n = document.createElement("p");
+      n.className = "snota";
+      n.textContent = s.nota;
+      cont.appendChild(n);
+    }
     cartas.forEach(c => {
       const el = document.createElement("div");
       el.className = "item";
@@ -951,7 +960,7 @@ $("#resSalir").onclick = cerrarRecurso;
 function htmlRecursos() {
   const celdas = t => lineas(t).map(esc).join("<br>");
   const hoy = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
-  let h = `<h1>Japonés · material de estudio</h1><p class="pmeta">A1 (N5.1) · Hiragana, katakana y romaji · ${esc(hoy)}</p>`;
+  let h = `<h1>Japonés · material de estudio</h1><p class="pmeta">${esc(hoy)}</p>`;
   BLOQUES.forEach((b, i) => {
     h += `<section class="${i ? "nueva" : ""}"><h2>${esc(b.ro ? etqJp(b) : b.nombre)}</h2>`;
     b.subbloques.forEach(s => {
@@ -960,7 +969,7 @@ function htmlRecursos() {
            `<thead><tr><th>Japonés</th><th>Romaji</th><th>Español</th></tr></thead><tbody>` +
            cartas.map(c => `<tr><td class="j">${celdas(c.jp)}</td><td class="r">${celdas(c.lectura)}</td>` +
              `<td class="e">${celdas(c.es)}${c.nota ? `<span class="nt">${esc(c.nota)}</span>` : ""}</td></tr>`).join("") +
-           `</tbody></table>`;
+           `</tbody></table>` + (s.nota ? `<p class="snota">${esc(s.nota)}</p>` : "");
     });
     h += `</section>`;
   });

@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Reglas de seguridad de la web "hogar".
+// Cópialas en Firebase > Firestore Database > Reglas y pulsa "Publicar".
+//
+// - Hay que entrar con Google para todo.
+// - La primera persona que entra crea el grupo y es administradora.
+// - Las demás quedan "pendientes" hasta que un administrador las acepta.
+// - Solo las personas aceptadas pueden leer o cambiar tareas, listas y menú.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function myDoc() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function approved() { return signedIn() && exists(myDoc()) && get(myDoc()).data.status == 'approved'; }
+    function admin() { return approved() && get(myDoc()).data.role == 'admin'; }
+
+    // Quién fundó el grupo (solo se puede crear una vez)
+    match /meta/group {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.founder == request.auth.uid;
+      allow delete: if admin();
+      allow update: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if approved() || (signedIn() && request.auth.uid == uid);
+
+      allow create: if signedIn() && request.auth.uid == uid && (
+        // pedir acceso
+        (request.resource.data.status == 'pending' && request.resource.data.role == 'member')
+        // la persona fundadora entra directamente como administradora
+        || (request.resource.data.status == 'approved' && request.resource.data.role == 'admin'
+            && get(/databases/$(database)/documents/meta/group).data.founder == request.auth.uid)
+      );
+
+      allow update: if admin()
+        // cada uno puede cambiar su nombre, color y apariencia, pero no su estado ni su rol
+        || (signedIn() && request.auth.uid == uid
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.role == resource.data.role)
+        // si te rechazaron, puedes volver a pedir acceso
+        || (signedIn() && request.auth.uid == uid
+            && resource.data.status == 'rejected'
+            && request.resource.data.status == 'pending'
+            && request.resource.data.role == 'member');
+
+      allow delete: if admin() || (signedIn() && request.auth.uid == uid);
+    }
+
+    match /tasks/{id}       { allow read, write: if approved(); }
+    match /completions/{id} { allow read, write: if approved(); }
+    match /lists/{id}       { allow read, write: if approved(); }
+    match /dishes/{id}      { allow read, write: if approved(); }
+    match /menu/{id}        { allow read, write: if approved(); }
+  }
+}

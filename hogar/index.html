@@ -892,7 +892,7 @@ function vAjustes() {
     </div>`).join('')}</div>`;
   if (admin && rej.length) h += `<div class="h2">Sin acceso <span class="n">${rej.length}</span></div><div class="card">${rej.map(([id, u]) => `<div class="mem"><span class="av" style="background:#71717a">${esc((u.name || '?')[0])}</span>
       <div class="tx"><div class="nm">${esc(u.name)}</div><div class="muted small">${esc(u.email || '')}</div></div>
-      <div class="btns"><button class="btn ghost sm" data-act="approve" data-id="${id}">Dar acceso</button></div></div>`).join('')}</div>`;
+      <div class="btns"><button class="btn ghost sm" data-act="approve" data-id="${id}">Dar acceso</button><button class="btn danger sm" data-act="removeUser" data-id="${id}">Eliminar</button></div></div>`).join('')}</div>`;
   if (DEMO) h += `<div class="h2">Modo prueba</div><div class="card">
       <div class="note" style="margin-top:0">Los datos solo están en este dispositivo. Añade personas de prueba y cambia de usuario para comprobar cómo rotan las tareas.</div>
       <div class="addrow"><input id="demoNew" placeholder="Nombre de prueba" value="${iv('demoNew')}" data-enter="demoAdd"><button class="btn" data-act="demoAdd">＋</button></div>
@@ -1187,6 +1187,7 @@ const ACT = {
   approve: d => { W(store.update('users', d.id, { status: 'approved', role: 'member', color: freeColor(d.id) })); toast('Acceso concedido'); },
   reject: d => W(store.update('users', d.id, { status: 'rejected', role: 'member' })),
   revoke: d => { if (!confirm(`¿Quitar el acceso a ${pname(d.id)}?`)) return; W(store.update('users', d.id, { status: 'rejected', role: 'member' })); },
+  removeUser: d => { if (!confirm(`¿Eliminar a ${pname(d.id)} del todo? Si vuelve a entrar, aparecerá como una solicitud nueva.`)) return; W(store.del('users', d.id)); toast('Eliminado'); },
   toggleAdmin: d => {
     const u = S.users[d.id]; if (!u) return;
     if (u.role === 'admin') W(store.update('users', d.id, { role: 'member' }));

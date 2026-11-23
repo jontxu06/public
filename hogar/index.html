@@ -197,7 +197,14 @@ input:focus,select:focus{border-color:var(--accent)}
    Mientras sea null, la web funciona en MODO PRUEBA (datos solo en este
    dispositivo).
    ===================================================================== */
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAcjcwptB56-1lcR9HtjdZr6QntSLloEzs",
+  authDomain: "hogar-dcce1.firebaseapp.com",
+  projectId: "hogar-dcce1",
+  storageBucket: "hogar-dcce1.firebasestorage.app",
+  messagingSenderId: "551226050366",
+  appId: "1:551226050366:web:5a30d4b07dec2b6a3b8e6f"
+};
 
 /* ---------------- utilidades ---------------- */
 const $ = (s, r = document) => r.querySelector(s);

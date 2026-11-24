@@ -454,6 +454,9 @@ const BLOQUES = [
           ["ばしょは？", "basho wa?", "¿Cuál es el lugar?"],
           ["だれ", "dare", "¿Quién?"],
           ["だれの", "dare no", "¿De quién?"],
+          ["どこ", "doko", "¿Dónde?"],
+          ["どこにすんでいますか", "doko ni sunde imasu ka", "¿Dónde vives?"],
+          ["かぞくはどこにすんでいますか", "kazoku wa doko ni sunde imasu ka", "¿Dónde vive tu familia?"],
           ["なにご", "nanigo", "¿Qué idioma?"],
           ["だれですか", "dare desu ka", "¿Quién es?"],
           ["だれのノートですか", "dare no nooto desu ka", "¿De quién es el cuaderno?", "だれの = ¿de quién?"],
@@ -477,6 +480,10 @@ const BLOQUES = [
           ["いいえ、〜じゃありません", "iie, ~ ja arimasen", "No, no es 〜"],
           ["〜も〜です", "~ mo ~ desu", "〜 también es 〜", "も = «también» (o «tampoco» con negativo); sustituye a は"],
           ["〜の〜", "~ no ~", "〜 de 〜", "の = «de»: primero el dueño y luego la cosa"],
+          ["〜にすんでいます", "~ ni sunde imasu", "Vivir en 〜", "Primero el sitio y luego にすんでいます"],
+          ["わたしはビルバオにすんでいます", "watashi wa Birubao ni sunde imasu", "Yo vivo en Bilbao"],
+          ["あにはとうきょうにすんでいます", "ani wa Tookyoo ni sunde imasu", "Mi hermano mayor vive en Tokio"],
+          ["かぞくはスペインにすんでいます", "kazoku wa Supein ni sunde imasu", "Mi familia vive en España"],
           ["はじめまして。わたしは＿＿です。どうぞよろしくおねがいします。", "hajimemashite. watashi wa ___ desu. doozo yoroshiku onegaishimasu",
             "Presentación: Buenas, me presento. Yo soy ___. Encantado/a de conocerte"],
         ]
@@ -672,7 +679,7 @@ const BLOQUES = [
     id: "numeros", nombre: "Números", icono: "🔢", jp: "すうじ", ro: "Suuji",
     subbloques: [
       {
-        id: "basicos", nombre: "Números básicos",
+        id: "basicos", nombre: "Números",
         cartas: [
           ["いち", "ichi", "Uno (1)"],
           ["に", "ni", "Dos (2)"],
@@ -696,6 +703,20 @@ const BLOQUES = [
           ["はっぴゃく", "happyaku", "Ochocientos (800)", "Cambia: ppyaku, no hyaku"],
           ["さんぜん", "sanzen", "Tres mil (3000)", "Cambia: zen, no sen"],
           ["はっせん", "hassen", "Ocho mil (8000)", "Con doble s"],
+          ["ひとり", "hitori", "Una persona (1)", "Excepción: no es いちにん"],
+          ["ふたり", "futari", "Dos personas (2)", "Excepción: no es ににん"],
+          ["よにん", "yonin", "Cuatro personas (4)", "No es よんにん ni しにん"],
+          ["いっさい", "issai", "Edad acabada en 1", "No es いちさい · Ej.: じゅういっさい (Juuissai, 11 años)"],
+          ["はっさい", "hassai", "Edad acabada en 8", "No es はちさい · Ej.: にじゅうはっさい (Nijuuhassai, 28 años)"],
+          ["じゅっさい", "jussai", "Edad en decenas exactas (10, 30, 40…)", "No es じゅうさい · Ej.: さんじゅっさい (Sanjussai, 30 años)"],
+          ["はたち", "hatachi", "Veinte años (20)", "Excepción: no es にじゅっさい"],
+        ]
+      },
+      {
+        id: "contadores", nombre: "Contadores",
+        cartas: [
+          ["〜さい", "~ sai", "Contador de edad (años)", "Número + さい · Ej.: ごさい (Gosai, 5 años) · ¿Cuántos años? なんさい (Nansai)"],
+          ["〜にん", "~ nin", "Contador de personas", "Número + にん · Ej.: さんにん (Sannin, 3 personas) · ¿Cuántas personas? なんにん (Nannin)"],
         ]
       },
     ]
@@ -748,7 +769,7 @@ const RECURSOS = [
 ];
 
 /* Selección: un solo bloque a la vez + los subbloques marcados dentro de él */
-const cfg = { bloque: BLOQUES[0].id, abierto: true, subs: {} };
+const cfg = { bloque: BLOQUES[0].id, abierto: false, subs: {} };
 BLOQUES.forEach(b => cfg.subs[b.id] = new Set(b.subbloques.map(s => s.id)));
 
 const bloqueActual = () => BLOQUES.find(b => b.id === cfg.bloque);

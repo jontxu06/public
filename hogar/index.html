@@ -775,7 +775,7 @@ function vListas() {
 function vMenu() {
   const p = plan(), T = today();
   if (UI.menuEdit) return vMenuEdit();
-  if (!p.weeks?.length || !p.start) return `<div class="empty"><div class="big">🍲</div>Organiza las semanas de comidas y cenas. Se repetirán en bucle a partir del lunes que elijas.<br><br><button class="btn" data-act="menuEdit">Organizar semanas</button></div>`;
+  if (!p.weeks?.length || !p.start) return `<div class="empty"><div class="big">🍲</div>Organiza las semanas de comidas y cenas. Se repetirán en bucle a partir del lunes que elijas.<br><br><button class="btn" data-act="menuEdit">Organizar semanas</button><br><br><button class="btn ghost" data-act="importMenu">Importar menú</button></div>`;
   const mon = addDays(mondayOf(T), UI.menuOffset * 7);
   const dm0 = dayMenu(mon) || dayMenu(addDays(mon, 6));
   let h = `<div class="monthnav"><button data-act="menuWeek" data-n="-1">‹</button><span style="font-size:16px">${pd(mon).getDate()} ${MESES[pd(mon).getMonth()].slice(0, 3)} – ${pd(addDays(mon, 6)).getDate()} ${MESES[pd(addDays(mon, 6)).getMonth()].slice(0, 3)}${dm0 ? ` · Semana ${dm0.w + 1}/${p.weeks.length}` : ''}</span><button data-act="menuWeek" data-n="1">›</button></div>`;
@@ -791,7 +791,7 @@ function vMenu() {
     h += `</div>`;
   }
   return h + `${UI.menuOffset ? `<div style="text-align:center"><button class="btn ghost sm" data-act="menuWeek" data-n="0">Esta semana</button></div>` : ''}
-    <div class="actions"><button class="btn ghost full" data-act="menuEdit">Editar semanas y fecha de inicio</button></div>`;
+    <div class="actions"><button class="btn ghost full" data-act="menuEdit">Editar semanas y fecha de inicio</button><button class="btn ghost full" data-act="importMenu">Importar menú</button></div>`;
 }
 function vMenuEdit() {
   const p = clone(plan()); if (!p.weeks?.length) p.weeks = [];
@@ -813,6 +813,7 @@ function vMenuEdit() {
     h += `</div>`;
   });
   return h + `<div class="actions"><button class="btn full" data-act="menuDone">Listo</button>
+    <button class="btn ghost full" data-act="importMenu">Importar menú</button>
     <button class="btn danger full" data-act="delWeek">Borrar Semana ${UI.editWeek + 1}</button></div>`;
 }
 function vRecetas() {
@@ -1065,6 +1066,36 @@ function pickSheet(st) {
     <div class="actions">${cur ? `<button class="btn danger full" data-act="pick" data-id="">Dejar vacío</button>` : ''}</div>`;
   return h;
 }
+function importSheet(st) {
+  return shead('Importar menú') + `<div class="note">Pega aquí el texto que te ha preparado Claude. Sustituirá todas las semanas del menú actual. Los platos que ya existan (con el mismo nombre) se reutilizan con sus ingredientes.</div>
+    <textarea id="impTxt" data-bind="txt" rows="8" style="width:100%;margin-top:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;font:13px ui-monospace,monospace;color:var(--text)" placeholder="Pega aquí el texto">${sv('txt')}</textarea>
+    ${st.err ? `<div class="note" style="color:var(--red)">${esc(st.err)}</div>` : ''}
+    <div class="actions"><button class="btn full" data-act="doImport">Importar</button></div>`;
+}
+function doImport(txt) {
+  let j; try { const t = txt.trim(); j = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { throw new Error('El texto no es válido. Cópialo entero, sin cambiar nada.'); }
+  const weeks = j.semanas; if (!Array.isArray(weeks) || !weeks.length) throw new Error('No hay semanas en el texto.');
+  const byName = {}; for (const [id, d] of Object.entries(S.dishes)) byName[norm(d.name)] = id;
+  const newDishes = {}, ingIn = j.ingredientes || {};
+  const dishId = name => {
+    name = String(name || '').trim(); if (!name) return null;
+    const k = norm(name); if (byName[k]) return byName[k];
+    const id = nid(); byName[k] = id; newDishes[id] = { name, ingredients: [], createdAt: Date.now() }; return id;
+  };
+  const out = weeks.map(w => ({ days: Array.from({ length: 7 }, (_, i) => {
+    const d = emptyDay(), src = w[i]; if (!src) return d;
+    for (const [m] of MEALS) { const arr = src[m] || []; COURSES.forEach(([c], k) => { d[m][c] = dishId(arr[k]); }); }
+    return d;
+  }) }));
+  for (const [id, d] of Object.entries(newDishes)) {
+    const li = ingIn[d.name];
+    if (Array.isArray(li)) d.ingredients = li.map(x => { const [u, f] = UNITS[x[2]] || UNITS.g; return { name: String(x[0]), amount: Number(x[1]) * f, unit: u }; });
+    W(store.set('dishes', id, d));
+  }
+  const start = mondayOf(j.inicio || plan().start || addDays(mondayOf(today()), 7));
+  W(store.set('menu', 'plan', { start, weeks: out }));
+  return { n: Object.keys(newDishes).length, w: out.length, start };
+}
 function setSlot(w, d, m, c, id) {
   const p = clone(plan()); if (!p.weeks?.[w]) return;
   p.weeks[w].days[d][m][c] = id || null;
@@ -1139,6 +1170,11 @@ const ACT = {
   menuEdit: () => { UI.menuEdit = true; const dm = dayMenu(today()); UI.editWeek = dm ? dm.w : 0; if (!plan().weeks?.length) { W(store.set('menu', 'plan', { start: plan().start || addDays(mondayOf(today()), 7), weeks: [emptyWeek()] })); } scheduleRender(); },
   menuDone: () => { UI.menuEdit = false; window.scrollTo(0, 0); scheduleRender(); },
   menuStart: (d, el) => { if (!el.value) return; const m = mondayOf(el.value); if (m !== el.value) toast('Ajustado al lunes ' + fmtShort(m)); W(store.set('menu', 'plan', { ...clone(plan()), start: m })); },
+  importMenu: () => openSheet(importSheet, { txt: '' }),
+  doImport: () => {
+    try { const r = doImport(sheet.st.txt || ''); closeSheet(); UI.menuEdit = false; UI.menuOffset = 0; toast(`Importadas ${r.w} semanas y ${r.n} platos nuevos. Empieza el ${fmtLong(r.start)}`); scheduleRender(); }
+    catch (e) { sheet.st.err = e.message; renderSheet(); }
+  },
   editWeek: d => { UI.editWeek = Number(d.n); scheduleRender(); },
   addWeek: () => { const p = clone(plan()); p.weeks = [...(p.weeks || []), emptyWeek()]; if (!p.start) p.start = addDays(mondayOf(today()), 7); W(store.set('menu', 'plan', p)); UI.editWeek = p.weeks.length - 1; },
   delWeek: () => { if (!confirm(`¿Borrar la Semana ${UI.editWeek + 1}? Las siguientes se renumeran.`)) return; const p = clone(plan()); p.weeks.splice(UI.editWeek, 1); W(store.set('menu', 'plan', p)); UI.editWeek = Math.max(0, UI.editWeek - 1); },

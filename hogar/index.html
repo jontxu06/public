@@ -340,8 +340,19 @@ let CI = {}, MEMO = {};
 function indexComps() { CI = {}; for (const [id, c] of Object.entries(S.completions)) (CI[c.taskId] ||= []).push({ id, ...c }); MEMO = {}; }
 const activePeople = t => (t.people || []).filter(u => S.users[u]?.status === 'approved');
 
+const isWin = t => t.mode === 'window' && (t.type === 'weekly' || t.type === 'monthly');
+function occEnd(t, d) {
+  if (!isWin(t)) return d;
+  const N = Math.max(1, t.every || 1);
+  if (t.type === 'weekly') return addDays(d, 7 * N - 1);
+  const [y, m] = ymd(d); return ds(new Date(y, m + N, 0));
+}
 function* occIter(t) {
   const s = t.start || today(), N = Math.max(1, t.every || 1);
+  if (isWin(t)) {
+    if (t.type === 'weekly') { let m = mondayOf(s); for (;;) { yield m; m = addDays(m, 7 * N); } }
+    let [y, mo] = ymd(s); for (;;) { yield ds(new Date(y, mo, 1)); mo += N; y += Math.floor(mo / 12); mo %= 12; }
+  }
   if (t.type === 'daily') { let d = s; for (;;) { yield d; d = addDays(d, N); } }
   if (t.type === 'weekly') {
     const wds = [...(t.weekdays || [])].sort((a, b) => a - b); if (!wds.length) return;
@@ -369,14 +380,15 @@ function runFixed(t, end, stopAt) {
     if (d > end || ++guard > 20000) break;
     if (stopAt && d >= stopAt) break;
     const c = comps[d];
-    if (d < (rot.from || '')) { if (c) out.push({ date: d, assignee: c.assignee, done: c }); continue; }
+    const e = occEnd(t, d);
+    if (d < (rot.from || '')) { if (c) out.push({ date: d, end: e, assignee: c.assignee, done: c }); continue; }
     const a = resolve(d);
     if (c) {
       const who = c.assignee || a;
       if (c.skipped || c.by === who) p++;
-      else { credits.push({ uid: c.by, from: c.doneDay }); if (c.doneDay > d) p++; }
-      out.push({ date: d, assignee: who, done: c });
-    } else { p++; out.push({ date: d, assignee: a, done: null }); }
+      else { credits.push({ uid: c.by, from: c.doneDay }); if (c.doneDay > e) p++; }
+      out.push({ date: d, end: e, assignee: who, done: c });
+    } else { p++; out.push({ date: d, end: e, assignee: a, done: null }); }
   }
   return (MEMO[key] = { out, idx: n ? p % n : 0, credits });
 }
@@ -396,12 +408,22 @@ function runSeq(t, stopAt) {
 }
 
 function buildAgenda(from, to) {
-  const T = today(), map = {}, overdue = [], key = `A${from}|${to}`;
+  const T = today(), map = {}, overdue = [], windows = [], key = `A${from}|${to}`;
   if (MEMO[key]) return MEMO[key];
   const push = (d, it) => (map[d] ||= []).push(it);
   for (const [id, t0] of Object.entries(S.tasks)) {
     const t = { id, ...t0 }; if (t.paused) continue;
     if (FIXED.includes(t.type)) {
+      if (isWin(t)) {
+        for (const o of runFixed(t, to > T ? to : T).out) {
+          const it = { t, date: o.date, end: o.end, assignee: o.assignee, done: o.done, kind: 'window' };
+          const at = o.done ? o.done.doneDay : o.end;
+          if (at >= from && at <= to) push(at, it);
+          if (!o.done && o.date <= T && o.end >= T) windows.push(it);
+          if (!o.done && o.end < T && o.end >= addDays(T, -30)) overdue.push({ ...it, overdue: true, due: o.end });
+        }
+        continue;
+      }
       for (const o of runFixed(t, to > T ? to : T).out) {
         const it = { t, date: o.date, assignee: o.assignee, done: o.done, kind: 'fixed' };
         if (o.date >= from && o.date <= to) push(o.date, it);
@@ -425,7 +447,8 @@ function buildAgenda(from, to) {
     }
   }
   overdue.sort((a, b) => (a.due || a.date).localeCompare(b.due || b.date));
-  return (MEMO[key] = { map, overdue });
+  windows.sort((a, b) => a.end.localeCompare(b.end));
+  return (MEMO[key] = { map, overdue, windows });
 }
 
 function compact() { // mantiene pocas "completadas" cargadas: guarda el estado de la rotación cada cierto tiempo
@@ -441,7 +464,7 @@ function compact() { // mantiene pocas "completadas" cargadas: guarda el estado 
 }
 
 function currentAssignee(t, includeDone) {
-  if (FIXED.includes(t.type)) { const T = today(); const o = runFixed(t, addDays(T, 800)).out.find(o => o.date >= T && (includeDone || !o.done)); return o?.assignee; }
+  if (FIXED.includes(t.type)) { const T = today(); const o = runFixed(t, addDays(T, 800)).out.find(o => (o.end || o.date) >= T && (includeDone || !o.done)); return o?.assignee; }
   return runSeq(t)?.next[0];
 }
 
@@ -449,8 +472,10 @@ function describe(t) {
   const N = Math.max(1, t.every || 1);
   switch (t.type) {
     case 'daily': return N === 1 ? 'Todos los días' : `Cada ${N} días`;
-    case 'weekly': { const d = (t.weekdays || []).slice().sort().map(i => DAB[i]).join(', '); return (N === 1 ? 'Cada semana' : `Cada ${N} semanas`) + (d ? `: ${d}` : ''); }
-    case 'monthly': return (N === 1 ? 'Cada mes' : `Cada ${N} meses`) + `, día ${t.monthDay || 1}`;
+    case 'weekly': if (isWin(t)) return (N === 1 ? 'Cada semana' : `Cada ${N} semanas`) + ', cualquier día';
+    { const d = (t.weekdays || []).slice().sort().map(i => DAB[i]).join(', '); return (N === 1 ? 'Cada semana' : `Cada ${N} semanas`) + (d ? `: ${d}` : ''); }
+    case 'monthly': if (isWin(t)) return (N === 1 ? 'Cada mes' : `Cada ${N} meses`) + ', cualquier día';
+      return (N === 1 ? 'Cada mes' : `Cada ${N} meses`) + `, día ${t.monthDay || 1}`;
     case 'yearly': return (N === 1 ? 'Cada año' : `Cada ${N} años`) + `, ${t.monthDay || 1} de ${MESES[(t.month || 1) - 1]}`;
     case 'ondone': return 'Al terminar pasa al siguiente';
     case 'afterdone': { const X = Math.max(1, t.after || 1); return X === 1 ? 'Vuelve 1 día después de hacerla' : `Vuelve ${X} días después de hacerla`; }
@@ -661,6 +686,7 @@ function taskRow(it) {
   let su;
   if (it.done) su = it.done.skipped ? 'Omitida' : `Hecha por ${it.done.by === S.me.uid ? 'ti' : shortN(it.done.by)}${it.done.by !== it.assignee ? ` (le tocaba a ${short(it.assignee)})` : ''}`;
   else if (it.overdue) su = `Atrasada desde ${relDay(it.due || it.date).toLowerCase()} · ${mine ? 'te toca' : 'le toca a ' + shortN(it.assignee)}`;
+  else if (it.kind === 'window') { const left = diffDays(T, it.end); su = `${it.date > T ? 'Previsto · ' : ''}${left === 0 ? 'Último día' : left < 0 ? '' : `Quedan ${left + 1} días`} · ${mine ? 'te toca a ti' : 'le toca a ' + shortN(it.assignee)}`; }
   else if (it.kind === 'ondone') su = `${mine ? 'Te toca a ti' : 'Le toca a ' + shortN(it.assignee)} · pasa al terminar`;
   else su = (it.date > T ? (it.predicted ? 'Previsto · ' : '') : '') + (mine ? 'Te toca a ti' : 'Le toca a ' + shortN(it.assignee));
   const canCheck = it.done ? it.done.doneDay === T : it.date <= addDays(T, 60);
@@ -679,7 +705,9 @@ function dayDetail(d, ag) {
   if (d === T) {
     const over = ag.overdue.filter(matchF);
     if (over.length) h += `<div class="h2 red">Atrasadas <span class="n">${over.length}</span></div>` + over.map(taskRow).join('');
-    const pend = items.filter(i => !i.done && i.kind !== 'ondone'), turns = items.filter(i => !i.done && i.kind === 'ondone'), done = items.filter(i => i.done);
+    const pend = items.filter(i => !i.done && i.kind !== 'ondone' && i.kind !== 'window'), turns = items.filter(i => !i.done && i.kind === 'ondone'), done = items.filter(i => i.done);
+    const wins = (ag.windows || []).filter(matchF);
+    if (wins.length) h += `<div class="h2">Con plazo <span class="n">${wins.length}</span></div>` + wins.map(taskRow).join('');
     if (pend.length) h += `<div class="h2">Para hoy <span class="n">${pend.length}</span></div>` + pend.sort(pendingFirst).map(taskRow).join('');
     if (turns.length) h += `<div class="h2">Cuando haga falta <span class="n">${turns.length}</span></div>` + turns.sort(pendingFirst).map(taskRow).join('');
     if (done.length) h += `<div class="h2">Hechas hoy <span class="n">${done.length}</span></div>` + done.map(taskRow).join('');
@@ -725,7 +753,7 @@ function vDefinir() {
       const P = activePeople(t), cur = t.paused ? null : currentAssignee(t);
       return `<div class="row" data-act="editTask" data-id="${t.id}">
         <div class="em">${esc(t.emoji || '🧹')}</div>
-        <div class="tx"><div class="ti">${esc(t.name)} ${t.paused ? '<span class="tag">Pausada</span>' : ''}</div>
+        <div class="tx"><div class="ti">${esc(t.name)} ${t.paused ? '<span class="tag">Pausada</span>' : ''}${!P.length ? '<span class="tag red">Sin personas</span>' : ''}</div>
           <div class="su">${esc(describe(t))}</div>
           <div class="order">${P.map((u, i) => `${i ? '→' : ''}${av(u, 'sm')}`).join('')}${cur ? `<span style="margin-left:6px">ahora: ${esc(shortN(cur))}</span>` : ''}</div>
         </div></div>`;
@@ -918,7 +946,7 @@ function renderSheet(first) {
 const sv = k => esc(sheet?.st[k] ?? '');
 const shead = (title, sub, em) => `<div class="shead">${em ? `<span style="font-size:34px">${esc(em)}</span>` : ''}<div style="flex:1"><h3>${esc(title)}</h3>${sub ? `<div class="muted">${esc(sub)}</div>` : ''}</div><button class="x" data-act="closeSheet" aria-label="Cerrar">✕</button></div>`;
 
-const EMOJIS = '🧽 🍽️ 🧺 🛏️ 🧹 🛁 🚽 🚿 🗑️ ♻️ 🧼 🪟 🧴 🪣 🧻 🌱 🪴 🐶 🐱 🛒 🍳 👕 🧦 🚗 🔧 💡 📦 🧊 🔥 💊 📬 🏠'.split(' ');
+const EMOJIS = '🤖 🧽 🍽️ 🧺 🛏️ 🧹 🛁 🚽 🚿 🗑️ ♻️ 🧼 🪟 🧴 🪣 🧻 🌱 🪴 🐶 🐱 🛒 🍳 👕 🧦 🚗 🔧 💡 📦 🧊 🔥 💊 📬 🏠'.split(' ');
 const TYPES = [['daily', 'Diaria'], ['weekly', 'Semanal'], ['monthly', 'Mensual'], ['yearly', 'Anual'], ['ondone', 'Al terminar'], ['afterdone', 'X días después']];
 
 function taskSheet(st) {
@@ -937,8 +965,10 @@ function taskSheet(st) {
   if (isFix) {
     const N = st.every;
     h += `<div class="lbl">Repetir cada</div><div class="stepper"><button data-act="tEvery" data-n="-1">−</button><span class="v">${N === 1 ? `Cada ${unit[0]}` : `Cada ${N} ${unit[1]}`}</span><button data-act="tEvery" data-n="1">＋</button></div>`;
-    if (st.type === 'weekly') h += `<div class="lbl">Qué días</div><div class="opts">${DL.map((l, i) => `<button class="opt wd ${st.weekdays.includes(i) ? 'on' : ''}" data-act="tWd" data-n="${i}">${l}</button>`).join('')}</div>`;
-    if (st.type === 'monthly') h += `<div class="lbl">Día del mes</div><select data-bind="monthDay" data-num="1">${Array.from({ length: 31 }, (_, i) => `<option ${st.monthDay == i + 1 ? 'selected' : ''} value="${i + 1}">${i + 1}</option>`).join('')}</select><div class="note">Si el mes tiene menos días, se hace el último día.</div>`;
+    if (st.type === 'weekly' || st.type === 'monthly') h += `<div class="lbl">Cuándo</div><div class="opts"><button class="opt ${st.mode !== 'window' ? 'on' : ''}" data-act="tMode" data-v="days">${st.type === 'weekly' ? 'Días concretos' : 'Un día concreto'}</button><button class="opt ${st.mode === 'window' ? 'on' : ''}" data-act="tMode" data-v="window">${st.type === 'weekly' ? 'Cualquier día de la semana' : 'Cualquier día del mes'}</button></div>
+      ${st.mode === 'window' ? `<div class="note">Tenéis ${st.type === 'weekly' ? (st.every === 1 ? 'toda la semana (de lunes a domingo)' : `${st.every} semanas`) : (st.every === 1 ? 'todo el mes' : `${st.every} meses`)} para hacerla. Solo sale como atrasada si se acaba el plazo sin hacerla.</div>` : ''}`;
+    if (st.type === 'weekly' && st.mode !== 'window') h += `<div class="lbl">Qué días</div><div class="opts">${DL.map((l, i) => `<button class="opt wd ${st.weekdays.includes(i) ? 'on' : ''}" data-act="tWd" data-n="${i}">${l}</button>`).join('')}</div>`;
+    if (st.type === 'monthly' && st.mode !== 'window') h += `<div class="lbl">Día del mes</div><select data-bind="monthDay" data-num="1">${Array.from({ length: 31 }, (_, i) => `<option ${st.monthDay == i + 1 ? 'selected' : ''} value="${i + 1}">${i + 1}</option>`).join('')}</select><div class="note">Si el mes tiene menos días, se hace el último día.</div>`;
     if (st.type === 'yearly') h += `<div class="lbl">Fecha</div><div style="display:flex;gap:8px"><select data-bind="monthDay" data-num="1">${Array.from({ length: 31 }, (_, i) => `<option ${st.monthDay == i + 1 ? 'selected' : ''} value="${i + 1}">${i + 1}</option>`).join('')}</select>
       <select data-bind="month" data-num="1">${MESES.map((m, i) => `<option ${st.month == i + 1 ? 'selected' : ''} value="${i + 1}">${m}</option>`).join('')}</select></div>`;
   } else if (st.type === 'ondone') {
@@ -958,33 +988,34 @@ function openTask(id) {
   openSheet(taskSheet, {
     id, name: t?.name || '', emoji: t?.emoji || '🧽', people, orig: [...people], type: t?.type || 'daily', every: t?.every || 1,
     weekdays: [...(t?.weekdays || [dow(T)])], monthDay: t?.monthDay || pd(T).getDate(), month: t?.month || pd(T).getMonth() + 1,
-    after: t?.after || 7, start: t?.start || T, paused: !!t?.paused,
+    after: t?.after || 7, start: t?.start || T, paused: !!t?.paused, mode: t?.mode || 'days',
   });
 }
+function firstOpen(t, T) { let g = 0; for (const d of occIter(t)) { if (occEnd(t, d) >= T || ++g > 5000) return d; } return t.start || T; }
 function saveTask() {
   const st = sheet.st, T = today();
   const name = (st.name || '').trim();
   if (!name) return toast('Ponle un nombre a la tarea');
   if (!st.people.length) return toast('Elige al menos una persona');
-  if (st.type === 'weekly' && !st.weekdays.length) return toast('Elige algún día de la semana');
-  const data = { name, emoji: st.emoji, type: st.type, every: st.every, weekdays: [...st.weekdays].sort((a, b) => a - b), monthDay: Number(st.monthDay), month: Number(st.month), after: st.after, start: st.start || T, paused: !!st.paused };
+  if (st.type === 'weekly' && st.mode !== 'window' && !st.weekdays.length) return toast('Elige algún día de la semana');
+  const data = { mode: st.mode || 'days', name, emoji: st.emoji, type: st.type, every: st.every, weekdays: [...st.weekdays].sort((a, b) => a - b), monthDay: Number(st.monthDay), month: Number(st.month), after: st.after, start: st.start || T, paused: !!st.paused };
   if (!st.id) {
     const people = shuffle(st.people);
-    const rot = FIXED.includes(st.type) ? { from: data.start, idx: 0, credits: [] } : { from: T, idx: 0, credits: [], lastDone: null };
+    const rot = FIXED.includes(st.type) ? { from: firstOpen(data, T), idx: 0, credits: [] } : { from: T, idx: 0, credits: [], lastDone: null };
     put('tasks', { ...data, people, rot, createdAt: Date.now(), createdBy: S.me.uid });
     toast('Tarea creada · orden: ' + people.map(shortN).join(' → '));
   } else {
     const old = { id: st.id, ...S.tasks[st.id] };
     const kept = activePeople(old).filter(u => st.people.includes(u));
-    const people = [...kept, ...st.people.filter(u => !kept.includes(u))];
-    const sched = ['type', 'every', 'weekdays', 'monthDay', 'month', 'after', 'start'];
+    const people = [...kept, ...shuffle(st.people.filter(u => !kept.includes(u)))];
+    const sched = ['mode', 'type', 'every', 'weekdays', 'monthDay', 'month', 'after', 'start'];
     const changed = JSON.stringify(people) !== JSON.stringify(activePeople(old)) || sched.some(k => JSON.stringify(data[k]) !== JSON.stringify(old[k]));
     const patch = { ...data, people };
     if (changed) {
       const cur = old.paused ? null : currentAssignee(old, true);
       const idx = Math.max(0, people.indexOf(cur));
       const sq = !FIXED.includes(old.type) ? runSeq(old) : null;
-      patch.rot = FIXED.includes(data.type) ? { from: data.start > T ? data.start : T, idx, credits: [] } : { from: T, at: Date.now(), idx, credits: [], lastDone: sq?.lastDone || null };
+      patch.rot = FIXED.includes(data.type) ? { from: firstOpen(data, T), idx, credits: [] } : { from: T, at: Date.now(), idx, credits: [], lastDone: sq?.lastDone || null };
     }
     W(store.update('tasks', st.id, patch));
     toast('Tarea guardada');
@@ -995,7 +1026,7 @@ function saveTask() {
 function itemSheet(st) {
   const it = st.it, T = today(), me = S.me.uid, mine = it.assignee === me, t = it.t;
   const P = activePeople(t);
-  let h = shead(t.name, it.kind === 'ondone' ? 'Turno actual' : (it.overdue ? 'Atrasada · ' : '') + cap(fmtLong(it.due || it.date)), t.emoji);
+  let h = shead(t.name, it.kind === 'ondone' ? 'Turno actual' : it.kind === 'window' ? `${it.overdue ? 'Atrasada · ' : ''}Plazo: del ${fmtShort(it.date).toLowerCase()} al ${fmtShort(it.end).toLowerCase()}` : (it.overdue ? 'Atrasada · ' : '') + cap(fmtLong(it.due || it.date)), t.emoji);
   h += `<div class="card" style="margin-top:6px"><div style="display:flex;align-items:center;gap:10px">${av(it.assignee)}<div><b>${mine ? 'Te toca a ti' : 'Le toca a ' + esc(pname(it.assignee))}</b><div class="muted small">${esc(describe(t))}</div></div></div>
     <div class="order" style="margin-top:12px">Orden: ${P.map((u, i) => `${i ? '→' : ''}${av(u, 'sm')}`).join('')}</div>
     ${it.done ? `<div class="note">${it.done.skipped ? 'Se omitió' : `Hecha por ${esc(pname(it.done.by))}`} el ${esc(fmtLong(it.done.doneDay))}.</div>` : ''}</div>
@@ -1016,9 +1047,10 @@ function itemSheet(st) {
 }
 function complete(it, skipped) {
   const T = today(), me = S.me.uid;
-  const doc = { taskId: it.t.id, date: it.kind === 'fixed' ? it.date : T, doneDay: T, by: me, assignee: it.assignee, at: Date.now() };
+  const dated = it.kind === 'fixed' || it.kind === 'window';
+  const doc = { taskId: it.t.id, date: dated ? it.date : T, doneDay: T, by: me, assignee: it.assignee, at: Date.now() };
   if (skipped) doc.skipped = true;
-  if (it.kind === 'fixed') W(store.set('completions', `${it.t.id}_${it.date}`, doc)); else put('completions', doc);
+  if (dated) W(store.set('completions', `${it.t.id}_${it.date}`, doc)); else put('completions', doc);
   if (!skipped) toast(it.assignee === me ? '¡Hecha! ✓' : `Hecha por ti en lugar de ${shortN(it.assignee)}`);
 }
 
@@ -1067,14 +1099,22 @@ function pickSheet(st) {
   return h;
 }
 function importSheet(st) {
-  return shead('Importar menú') + `<div class="note">Pega aquí el texto que te ha preparado Claude. Sustituirá todas las semanas del menú actual. Los platos que ya existan (con el mismo nombre) se reutilizan con sus ingredientes.</div>
+  return shead('Importar menú') + `<div class="note">Pega aquí el texto que te ha preparado Claude. Si trae menú, sustituirá todas las semanas del menú actual. Las tareas se añaden (las que ya existan con el mismo nombre no se repiten). Los platos que ya existan (con el mismo nombre) se reutilizan con sus ingredientes.</div>
     <textarea id="impTxt" data-bind="txt" rows="8" style="width:100%;margin-top:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;font:13px ui-monospace,monospace;color:var(--text)" placeholder="Pega aquí el texto">${sv('txt')}</textarea>
     ${st.err ? `<div class="note" style="color:var(--red)">${esc(st.err)}</div>` : ''}
     <div class="actions"><button class="btn full" data-act="doImport">Importar</button></div>`;
 }
 function doImport(txt) {
   let j; try { const t = txt.trim(); j = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { throw new Error('El texto no es válido. Cópialo entero, sin cambiar nada.'); }
-  const weeks = j.semanas; if (!Array.isArray(weeks) || !weeks.length) throw new Error('No hay semanas en el texto.');
+  const weeks = j.semanas, tareas = j.tareas;
+  if (!(Array.isArray(weeks) && weeks.length) && !(Array.isArray(tareas) && tareas.length)) throw new Error('No hay nada que importar en el texto.');
+  let nt = 0; const T = today(), have = new Set(Object.values(S.tasks).map(t => norm(t.name)));
+  for (const x of tareas || []) {
+    const name = String(x.nombre || x || '').trim(); if (!name || have.has(norm(name))) continue; have.add(norm(name));
+    put('tasks', { name, emoji: x.icono || '🧹', type: 'daily', mode: 'days', every: 1, weekdays: [dow(T)], monthDay: pd(T).getDate(), month: pd(T).getMonth() + 1, after: 7, start: T, paused: false, people: [], rot: { from: T, idx: 0, credits: [] }, createdAt: Date.now(), createdBy: S.me.uid });
+    nt++;
+  }
+  if (!(Array.isArray(weeks) && weeks.length)) return { n: 0, w: 0, nt };
   const byName = {}; for (const [id, d] of Object.entries(S.dishes)) byName[norm(d.name)] = id;
   const newDishes = {}, ingIn = j.ingredientes || {};
   const dishId = name => {
@@ -1094,7 +1134,7 @@ function doImport(txt) {
   }
   const start = mondayOf(j.inicio || plan().start || addDays(mondayOf(today()), 7));
   W(store.set('menu', 'plan', { start, weeks: out }));
-  return { n: Object.keys(newDishes).length, w: out.length, start };
+  return { n: Object.keys(newDishes).length, w: out.length, start, nt };
 }
 function setSlot(w, d, m, c, id) {
   const p = clone(plan()); if (!p.weeks?.[w]) return;
@@ -1117,7 +1157,7 @@ const ACT = {
   reRequest: () => W(store.update('users', S.me.uid, { status: 'pending', role: 'member' })),
   async reJoin() { stopApp(); signedIn(S.me); },
   filter: d => { UI.filter = d.f; localStorage.setItem('hogar-filter', d.f); scheduleRender(); },
-  selDay: d => { UI.sel = d.d; scheduleRender(); },
+  selDay: d => { UI.sel = d.d; UI.calMonth = d.d.slice(0, 7); scheduleRender(); },
   month: d => { const [y, m] = UI.calMonth.split('-').map(Number); const dt = new Date(y, m - 1 + Number(d.n), 1); UI.calMonth = ds(dt).slice(0, 7); UI.sel = ''; scheduleRender(); },
   calToday: () => { UI.calMonth = today().slice(0, 7); UI.sel = today(); scheduleRender(); },
   item: d => openSheet(itemSheet, { it: ITEMS[d.k] }),
@@ -1135,6 +1175,7 @@ const ACT = {
   tEmoji: d => { sheet.st.emoji = d.v; renderSheet(); },
   tPerson: d => { const p = sheet.st.people, i = p.indexOf(d.id); i >= 0 ? p.splice(i, 1) : p.push(d.id); renderSheet(); },
   tType: d => { sheet.st.type = d.v; renderSheet(); },
+  tMode: d => { sheet.st.mode = d.v; renderSheet(); },
   tEvery: d => { sheet.st.every = Math.min(99, Math.max(1, sheet.st.every + Number(d.n))); renderSheet(); },
   tAfter: d => { sheet.st.after = Math.min(365, Math.max(1, sheet.st.after + Number(d.n))); renderSheet(); },
   tWd: d => { const w = sheet.st.weekdays, n = Number(d.n), i = w.indexOf(n); i >= 0 ? w.splice(i, 1) : w.push(n); renderSheet(); },
@@ -1172,7 +1213,7 @@ const ACT = {
   menuStart: (d, el) => { if (!el.value) return; const m = mondayOf(el.value); if (m !== el.value) toast('Ajustado al lunes ' + fmtShort(m)); W(store.set('menu', 'plan', { ...clone(plan()), start: m })); },
   importMenu: () => openSheet(importSheet, { txt: '' }),
   doImport: () => {
-    try { const r = doImport(sheet.st.txt || ''); closeSheet(); UI.menuEdit = false; UI.menuOffset = 0; toast(`Importadas ${r.w} semanas y ${r.n} platos nuevos. Empieza el ${fmtLong(r.start)}`); scheduleRender(); }
+    try { const r = doImport(sheet.st.txt || ''); closeSheet(); UI.menuEdit = false; UI.menuOffset = 0; toast([r.w ? `${r.w} semanas de menú (empieza el ${fmtLong(r.start)})` : '', r.n ? `${r.n} platos` : '', r.nt ? `${r.nt} tareas` : ''].filter(Boolean).join(' · ') + ' importado'); scheduleRender(); }
     catch (e) { sheet.st.err = e.message; renderSheet(); }
   },
   editWeek: d => { UI.editWeek = Number(d.n); scheduleRender(); },

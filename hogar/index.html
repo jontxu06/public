@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Hogar">
 <title>Hogar</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 <style>
 :root{--accent:#f59e0b;--green:#22c55e;--red:#ef4444;--r:18px}
 :root,[data-theme=dark]{--bg:#0f0f10;--card:#1b1b1d;--card2:#26262a;--line:#2f2f34;--text:#f3f3f4;--muted:#9b9ba3;--shadow:none}
@@ -184,7 +185,9 @@ input:focus,select:focus{border-color:var(--accent)}
 .mem .nm{font-weight:600}
 .mem .btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px}
-.login .logo{font-size:72px}
+.login .logo{font-size:72px;line-height:0}
+.spin{width:34px;height:34px;border-radius:50%;border:3.5px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 .login h1{font-size:40px;margin:0}
 .gbtn{display:flex;align-items:center;gap:12px;background:#fff;color:#1f1f1f;padding:14px 22px;border-radius:14px;font-weight:700;font-size:17px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
 #toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:30;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
@@ -243,6 +246,7 @@ const relDay = s => { const n = diffDays(today(), s); return n === 0 ? 'Hoy' : n
 const num = (n, d = 2) => Number(n).toLocaleString('es-ES', { maximumFractionDigits: d });
 const norm = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const LOGO = (sz = 96) => `<svg width="${sz}" height="${sz}" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#ea580c"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#lg)"/><path d="M22 50 L50 26 L78 50 V76 a4 4 0 0 1 -4 4 H26 a4 4 0 0 1 -4 -4 Z" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M37 58 l9 9 l17 -18" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ICON = {
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>',
@@ -544,7 +548,7 @@ const iv = id => esc(UI.inputs[id] ?? '');
 
 /* ---------------- arranque y acceso ---------------- */
 async function boot() {
-  applyTheme();
+  applyTheme(); showLoader();
   if (DEMO) {
     store = new LocalStore();
     const u = JSON.parse(localStorage.getItem('hogar-demo-user') || 'null');
@@ -557,10 +561,13 @@ async function boot() {
   }
 }
 
+function showLoader(msg = 'Cargando…') {
+  paint($('#app'), `<div class="login"><div class="logo">${LOGO(84)}</div><h1>Hogar</h1><div class="spin" style="margin-top:14px"></div><p class="muted">${esc(msg)}</p></div>`);
+}
 function showLogin() {
   S.me = null; S.profile = null;
   paint($('#app'), `<div class="login">
-    <div class="logo">🏠</div><h1>Hogar</h1>
+    <div class="logo">${LOGO()}</div><h1>Hogar</h1>
     <p class="muted">Tareas de casa, menú y listas de la compra.</p>
     ${DEMO ? `
       <div class="card" style="max-width:360px;text-align:left">
@@ -575,7 +582,7 @@ function showLogin() {
 }
 
 async function signedIn(user) {
-  S.me = user;
+  S.me = user; showLoader('Entrando…');
   try {
     let prof = await store.get('users', user.uid);
     if (!prof) {
@@ -649,6 +656,7 @@ window.addEventListener('hashchange', () => { UI.scrollStrip = true; scheduleRen
 
 function render() {
   if (!S.started || S.profile?.status !== 'approved') return;
+  if (!['users', 'tasks', 'completions', 'lists'].every(k => S.loaded.has(k))) return showLoader();
   let [blk, sub] = route();
   if (!['tareas', 'comidas', 'ajustes'].includes(blk)) blk = 'tareas';
   const subs = blk === 'tareas' ? [['hoy', 'Hoy'], ['calendario', 'Calendario'], ['definir', 'Tareas']] : blk === 'comidas' ? [['listas', 'Listas'], ['menu', 'Menú'], ['recetas', 'Recetas'], ['compra', 'Compra']] : [];
@@ -695,7 +703,7 @@ function ring(items, d, size = 46) {
     <span class="num">${pd(d).getDate()}</span></div><div class="dots">${[...new Set(f.filter(i => !i.done).map(i => i.assignee))].slice(0, 4).map(u => `<i style="background:${pcolor(u)}"></i>`).join('')}</div>`;
 }
 let ITEMS = [];
-function taskRow(it) {
+function taskRow(it, ro) {
   const k = ITEMS.push(it) - 1, T = today(), mine = it.assignee === S.me.uid;
   let su;
   if (it.done) su = it.done.skipped ? 'Omitida' : `Hecha por ${it.done.by === S.me.uid ? 'ti' : shortN(it.done.by)}${it.done.by !== it.assignee ? ` (le tocaba a ${short(it.assignee)})` : ''}`;
@@ -703,8 +711,9 @@ function taskRow(it) {
   else if (it.kind === 'window') { const left = diffDays(T, it.end); su = `${it.date > T ? 'Previsto · ' : ''}${left === 0 ? 'Último día' : left < 0 ? '' : `Quedan ${left + 1} días`} · ${mine ? 'te toca a ti' : 'le toca a ' + shortN(it.assignee)}`; }
   else if (it.kind === 'ondone') su = `${mine ? 'Te toca a ti' : 'Le toca a ' + shortN(it.assignee)} · pasa al terminar`;
   else su = (it.date > T ? (it.predicted ? 'Previsto · ' : '') : '') + (mine ? 'Te toca a ti' : 'Le toca a ' + shortN(it.assignee));
-  const canCheck = it.done ? it.done.doneDay === T : it.date <= addDays(T, 60);
-  return `<div class="row ${it.done ? 'done' : ''} ${it.overdue ? 'over' : ''}" data-act="item" data-k="${k}">
+  const canCheck = !ro && (it.done ? it.done.doneDay === T : it.date <= addDays(T, 60));
+  if (ro) su = (mine ? 'Te tocará a ti' : 'Le tocará a ' + shortN(it.assignee));
+  return `<div class="row ${it.done ? 'done' : ''} ${it.overdue ? 'over' : ''}" ${ro ? 'style="opacity:.75"' : `data-act="item" data-k="${k}"`}>
     <div class="em">${esc(it.t.emoji || '🧹')}</div>
     <div class="tx"><div class="ti">${esc(it.t.name)}</div><div class="su">${esc(su)}</div></div>
     ${av(it.done ? it.done.by : it.assignee, 'sm')}
@@ -718,19 +727,19 @@ function dayDetail(d, ag) {
   let h = '';
   if (d === T) {
     const over = ag.overdue.filter(matchF);
-    if (over.length) h += `<div class="h2 red">Atrasadas <span class="n">${over.length}</span></div>` + over.map(taskRow).join('');
+    if (over.length) h += `<div class="h2 red">Atrasadas <span class="n">${over.length}</span></div>` + over.map(i => taskRow(i)).join('');
     const pend = items.filter(i => !i.done && i.kind !== 'ondone' && i.kind !== 'window'), turns = items.filter(i => !i.done && i.kind === 'ondone'), done = items.filter(i => i.done);
     const wins = (ag.windows || []).filter(matchF);
-    if (wins.length) h += `<div class="h2">Con plazo <span class="n">${wins.length}</span></div>` + wins.map(taskRow).join('');
-    if (pend.length) h += `<div class="h2">Para hoy <span class="n">${pend.length}</span></div>` + pend.sort(pendingFirst).map(taskRow).join('');
-    if (turns.length) h += `<div class="h2">Cuando haga falta <span class="n">${turns.length}</span></div>` + turns.sort(pendingFirst).map(taskRow).join('');
-    if (done.length) h += `<div class="h2">Hechas hoy <span class="n">${done.length}</span></div>` + done.map(taskRow).join('');
+    if (wins.length) h += `<div class="h2">Con plazo <span class="n">${wins.length}</span></div>` + wins.map(i => taskRow(i)).join('');
+    if (pend.length) h += `<div class="h2">Para hoy <span class="n">${pend.length}</span></div>` + pend.sort(pendingFirst).map(i => taskRow(i)).join('');
+    if (turns.length) h += `<div class="h2">Cuando haga falta <span class="n">${turns.length}</span></div>` + turns.sort(pendingFirst).map(i => taskRow(i)).join('');
+    if (done.length) h += `<div class="h2">Hechas hoy <span class="n">${done.length}</span></div>` + done.map(i => taskRow(i)).join('');
     if (!h) h = `<div class="empty"><div class="big">🎉</div>Nada pendiente para hoy</div>`;
   } else {
     const its = items.filter(i => i.done || i.kind !== 'window');
     const wins = (ag.winAll || []).filter(w => w.date <= d && w.end >= d).filter(matchF);
-    if (its.length) h += `<div class="h2">${esc(relDay(d))} <span class="n">${its.length}</span></div>` + its.sort(pendingFirst).map(taskRow).join('');
-    if (wins.length) h += `<div class="h2">Con plazo esa ${wins.some(w => w.t.type === 'monthly') ? 'época' : 'semana'} <span class="n">${wins.length}</span></div>` + wins.map(taskRow).join('');
+    if (its.length) h += `<div class="h2">${esc(relDay(d))} <span class="n">${its.length}</span></div>` + its.sort(pendingFirst).map(i => taskRow(i)).join('');
+    if (wins.length) h += `<div class="h2">Con plazo esa ${wins.some(w => w.t.type === 'monthly') ? 'época' : 'semana'} <span class="n">${wins.length}</span></div>` + wins.map(i => taskRow(i)).join('');
     if (!h) h = `<div class="empty"><div class="big">☕</div>Nada para este día</div>`;
   }
   if (!Object.keys(S.tasks).length) h = `<div class="empty"><div class="big">🧽</div>Todavía no hay tareas.<br><br><button class="btn" data-act="nav" data-h="#/tareas/definir">Crear la primera tarea</button></div>`;
@@ -738,14 +747,12 @@ function dayDetail(d, ag) {
 }
 function vHoy() {
   ITEMS = [];
-  const T = today(), from = addDays(T, -7), to = addDays(T, 20);
-  if (UI.sel < from || UI.sel > to) UI.sel = T;
-  const ag = buildAgenda(from, to);
-  let strip = '';
-  for (let d = from; d <= to; d = addDays(d, 1)) strip += `<button class="sday ${d === UI.sel ? 'sel' : ''} ${d === T ? 'today' : ''}" data-act="selDay" data-d="${d}"><span class="dn">${DAB[dow(d)]}</span>${ring(ag.map[d] || [], d)}<span class="dot"></span></button>`;
-  return `${filterChips()}<div class="strip">${strip}</div>
-    <div class="dayhead">${UI.sel === T ? 'Hoy — ' : ''}${esc(cap(fmtLong(UI.sel)))}</div>
-    ${dayDetail(UI.sel, ag)}`;
+  const T = today(), M = addDays(T, 1);
+  const ag = buildAgenda(addDays(T, -1), M);
+  let h = `${filterChips()}<div class="dayhead">Hoy — ${esc(cap(fmtLong(T)))}</div>` + dayDetail(T, ag);
+  const tm = (ag.map[M] || []).filter(i => !i.done && i.kind !== 'window' && i.kind !== 'ondone').filter(matchF);
+  if (tm.length) h += `<div class="h2">Mañana · previsión <span class="n">${tm.length}</span></div>` + tm.sort((a, b) => a.t.name.localeCompare(b.t.name)).map(it => taskRow(it, true)).join('');
+  return h;
 }
 function vCal() {
   ITEMS = [];
@@ -1147,7 +1154,7 @@ const ACT = {
   nav: d => go(d.h),
   back: () => history.length > 1 ? history.back() : go('#/tareas/hoy'),
   closeSheet: () => closeSheet(),
-  async login() { try { await store.login(); } catch (e) { toast('No se pudo entrar: ' + (e.code || e.message)); } },
+  async login() { showLoader('Entrando…'); try { await store.login(); if (!store.auth?.currentUser) showLogin(); } catch (e) { showLogin(); toast('No se pudo entrar: ' + (e.code || e.message)); } },
   demoLogin() {
     const name = (UI.inputs.demoName || '').trim() || 'Yo';
     const u = { uid: 'demo-' + nid(), name, email: 'prueba@hogar', photo: '' };

@@ -8,6 +8,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Hogar">
 <title>Hogar</title>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
+<link rel="preconnect" href="https://firestore.googleapis.com">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <style>
@@ -69,14 +73,6 @@ input:focus,select:focus{border-color:var(--accent)}
 .nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;border-radius:14px;color:var(--muted);font-weight:600;font-size:13px}
 .nav button svg{width:26px;height:26px}
 .nav button.on{color:var(--accent)}
-.strip{position:relative;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:6px 0;scroll-snap-type:x proximity}
-.strip::-webkit-scrollbar{display:none}
-.sday{flex:none;width:56px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;border-radius:16px;scroll-snap-align:center;color:var(--muted)}
-.sday .dn{font-size:12px;font-weight:600;text-transform:uppercase}
-.sday.sel{background:var(--card)}
-.sday.sel .num{color:var(--green)}
-.sday .dot{width:5px;height:5px;border-radius:50%;background:transparent}
-.sday.today .dot{background:var(--green)}
 .ringw{position:relative;display:grid;place-items:center}
 .ringw svg{display:block}
 .ringw .num{position:absolute;font-weight:600;font-size:15px;color:var(--text)}
@@ -292,14 +288,14 @@ class FireStore { // Firebase (Auth con Google + Firestore)
     try { this.db = fs.initializeFirestore(this.app, { ignoreUndefinedProperties: true, localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
     catch { this.db = fs.getFirestore(this.app); }
     this.auth = auth.getAuth(this.app);
-    try { await auth.getRedirectResult(this.auth); } catch (e) { console.warn(e); }
+    if (sessionStorage.getItem('hogar-redirect')) { sessionStorage.removeItem('hogar-redirect'); try { await auth.getRedirectResult(this.auth); } catch (e) { console.warn(e); } }
   }
   onAuth(cb) { this.A.onAuthStateChanged(this.auth, cb); }
   async login() {
     const p = new this.A.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
     try { await this.A.signInWithPopup(this.auth, p); }
     catch (e) {
-      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(e.code)) await this.A.signInWithRedirect(this.auth, p);
+      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(e.code)) { sessionStorage.setItem('hogar-redirect', '1'); await this.A.signInWithRedirect(this.auth, p); }
       else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') throw e;
     }
   }
@@ -310,7 +306,7 @@ class FireStore { // Firebase (Auth con Google + Firestore)
     if (where) q = this.fs.query(q, this.fs.where(...where));
     return this.fs.onSnapshot(q, snap => { const o = {}; snap.forEach(d => (o[d.id] = d.data())); cb(o); }, e => console.error(c, e));
   }
-  watchDoc(c, id, cb) { return this.fs.onSnapshot(this.ref(c, id), d => cb(d.exists() ? d.data() : null), e => { console.error(c, e); cb(null); }); }
+  watchDoc(c, id, cb, meta) { return this.fs.onSnapshot(this.ref(c, id), { includeMetadataChanges: !!meta }, d => cb(d.exists() ? d.data() : null, d.metadata.fromCache), e => { console.error(c, e); cb(null, false); }); }
   async get(c, id) { const d = await this.fs.getDoc(this.ref(c, id)); return d.exists() ? d.data() : null; }
   set(c, id, v) { return this.fs.setDoc(this.ref(c, id), v); }
   update(c, id, patch) { const p = {}; for (const [k, v] of Object.entries(patch)) p[k] = v === DEL ? this.fs.deleteField() : v; return this.fs.updateDoc(this.ref(c, id), p); }
@@ -327,7 +323,7 @@ const S = { me: null, profile: null, users: {}, tasks: {}, completions: {}, list
 const UI = {
   filter: localStorage.getItem('hogar-filter') || 'me', sel: today(), calMonth: today().slice(0, 7),
   inputs: {}, openLists: new Set(['casa']), compraN: 1, compraOff: new Set(), compraOpen: new Set(),
-  menuOffset: 0, menuEdit: false, editWeek: 0, recQ: '', scrollStrip: true,
+  menuOffset: 0, menuEdit: false, editWeek: 0,
 };
 let unsubs = [];
 
@@ -581,26 +577,29 @@ function showLogin() {
   </div>`);
 }
 
-async function signedIn(user) {
-  S.me = user; showLoader('Entrando…');
+async function createProfile(user) { // primera vez que entra esta cuenta
   try {
-    let prof = await store.get('users', user.uid);
-    if (!prof) {
-      const base = { name: user.name || 'Sin nombre', email: user.email || '', photo: user.photo || '', theme: 'dark', accent: 'naranja', createdAt: Date.now() };
-      let founder = false;
-      const meta = await store.get('meta', 'group');
-      if (!meta) { try { await store.set('meta', 'group', { founder: user.uid, at: Date.now() }); founder = true; } catch { founder = false; } }
-      prof = founder ? { ...base, status: 'approved', role: 'admin', color: 0 } : { ...base, status: 'pending', role: 'member', color: null };
-      await store.set('users', user.uid, prof);
-    }
+    const base = { name: user.name || 'Sin nombre', email: user.email || '', photo: user.photo || '', theme: 'dark', accent: 'naranja', createdAt: Date.now() };
+    let founder = false;
+    if (!(await store.get('meta', 'group'))) { try { await store.set('meta', 'group', { founder: user.uid, at: Date.now() }); founder = true; } catch { } }
+    await store.set('users', user.uid, founder ? { ...base, status: 'approved', role: 'admin', color: 0 } : { ...base, status: 'pending', role: 'member', color: null });
   } catch (e) { console.error(e); toast('Error al entrar: ' + (e.code || e.message)); }
-  unsubs.push(store.watchDoc('users', user.uid, p => {
-    S.profile = p;
-    if (!p) { stopApp(); return showWaiting(null); }
-    applyTheme(p);
+}
+function signedIn(user) {
+  S.me = user; showLoader('Entrando…');
+  let had = false, creating = false;
+  // El perfil sale al instante de la caché del móvil; solo se pregunta al servidor si no está guardado.
+  unsubs.push(store.watchDoc('users', user.uid, async (p, fromCache) => {
+    if (!p) {
+      if (fromCache) return;
+      if (had) { S.profile = null; stopApp(); return showWaiting(null); }
+      if (!creating) { creating = true; await createProfile(user); }
+      return;
+    }
+    had = true; S.profile = p; applyTheme(p);
     if (p.status === 'approved') { startApp(); scheduleRender(); }
     else { stopApp(true); showWaiting(p); }
-  }));
+  }, true));
 }
 
 function showWaiting(p) {
@@ -652,7 +651,7 @@ let rq = false;
 function scheduleRender() { if (rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 const route = () => { const h = (location.hash || '#/tareas/hoy').slice(2).split('/'); return [h[0] || 'tareas', h[1] || '']; };
 const go = h => { location.hash = h; };
-window.addEventListener('hashchange', () => { UI.scrollStrip = true; scheduleRender(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', () => { scheduleRender(); window.scrollTo(0, 0); });
 
 function render() {
   if (!S.started || S.profile?.status !== 'approved') return;
@@ -680,7 +679,6 @@ function render() {
     <button class="${blk === 'tareas' ? 'on' : ''}" data-act="nav" data-h="#/tareas/hoy">${ICON.tasks}Tareas</button>
     <button class="${blk === 'comidas' ? 'on' : ''}" data-act="nav" data-h="#/comidas/listas">${ICON.food}Comidas</button>
   </div></nav>`);
-  if (UI.scrollStrip) { const st = $('.strip'), s = $('.strip .sel'); if (st && s) { st.scrollLeft = s.offsetLeft - st.clientWidth / 2 + s.offsetWidth / 2; UI.scrollStrip = false; } }
 }
 
 /* ---------------- vistas: tareas ---------------- */
@@ -759,7 +757,7 @@ function vCal() {
   const T = today(), [y, m] = UI.calMonth.split('-').map(Number);
   const first = `${y}-${pad(m)}-01`, gs = mondayOf(first), last = `${y}-${pad(m)}-${pad(dim(y, m - 1))}`;
   const ge = addDays(mondayOf(last), 6);
-  const ag = buildAgenda(gs < addDays(T, -60) ? gs : gs, ge);
+  const ag = buildAgenda(gs, ge);
   if (UI.sel.slice(0, 7) !== UI.calMonth) UI.sel = T.slice(0, 7) === UI.calMonth ? T : first;
   let g = DL.map(l => `<div class="wd">${l}</div>`).join('');
   for (let d = gs; d <= ge; d = addDays(d, 1)) g += `<button class="cday ${d.slice(0, 7) !== UI.calMonth ? 'out' : ''} ${d === UI.sel ? 'sel' : ''} ${d === T ? 'today' : ''}" data-act="selDay" data-d="${d}">${ring(ag.map[d] || [], d, 42)}</button>`;

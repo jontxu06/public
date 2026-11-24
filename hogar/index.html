@@ -843,7 +843,7 @@ function vMenu() {
     h += `</div>`;
   }
   return h + `${UI.menuOffset ? `<div style="text-align:center"><button class="btn ghost sm" data-act="menuWeek" data-n="0">Esta semana</button></div>` : ''}
-    <div class="actions"><button class="btn ghost full" data-act="menuEdit">Editar semanas y fecha de inicio</button></div>`;
+    <div class="mfoot"><button class="btn full" data-act="menuEdit">✎ Editar menú semanal</button></div>`;
 }
 function vMenuEdit() {
   const p = clone(plan()); if (!p.weeks?.length) p.weeks = [];
